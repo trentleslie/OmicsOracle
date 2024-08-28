@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from omics_oracle.query_manager import QueryManager
 
 @pytest.fixture

@@ -76,7 +76,7 @@ class GeminiWrapper:
         Returns:
             str: The generated prompt.
         """
-        base_prompt = f"You are an AI assistant specializing in biomedical knowledge. "
+        base_prompt = "You are an AI assistant specializing in biomedical knowledge. "
         
         if context == "biomedical":
             prompt = base_prompt + f"Interpret the following biomedical query and provide a detailed explanation: '{query}'"

@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-from omics_oracle.spoke_wrapper import SpokeWrapper, ArangoClient
+from omics_oracle.spoke_wrapper import SpokeWrapper
 
 @pytest.fixture
 def mock_arango_client():

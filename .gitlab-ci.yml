@@ -1,0 +1,81 @@
+# Use Python 3.9 image
+image: python:3.9
+
+# Cache pip dependencies
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  PYTHONPATH: "$CI_PROJECT_DIR"
+
+cache:
+  paths:
+    - .cache/pip
+
+stages:
+  - test
+  - build
+  - deploy
+
+# Setup virtual environment and install dependencies
+before_script:
+  - python --version
+  - pip --version
+  - pip install --upgrade pip
+  - pip install -r requirements.txt
+  - pip install pytest ruff
+
+test:
+  stage: test
+  script:
+    - pwd
+    - ls -la
+    - pip install -e .
+    - cd ..
+    - python -c "import phenome_utils; print(phenome_utils.__file__)"
+    - python -c "import phenome_utils; print(dir(phenome_utils))"
+    - cd phenome-arivale
+    - ruff check .
+    - pytest tests/ -v
+  tags:
+    - docker
+
+build:
+  stage: build
+  script:
+    - python setup.py sdist bdist_wheel
+  artifacts:
+    paths:
+      - dist/*
+  only:
+    - main
+  tags:
+    - docker
+
+# Optionally add documentation generation if needed
+pages:
+  stage: build
+  script:
+    - pip install sphinx sphinx-rtd-theme
+    - if [ ! -d "doc" ]; then
+        mkdir doc;
+        cd doc;
+        sphinx-quickstart -q -p "OmicsOracle" -a "Trent Leslie" --ext-autodoc --ext-viewcode .;
+        cd ..;
+      fi
+    - cd doc
+    - make html
+    - mv _build/html/ ../public/
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  tags:
+    - docker
+
+# Placeholder for deployment script
+deploy:
+  stage: deploy
+  script: echo "Define your deployment script!"
+  environment: production
+  tags:
+    - docker
