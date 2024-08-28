@@ -29,10 +29,6 @@ test:
     - pwd
     - ls -la
     - pip install -e .
-    - cd ..
-    - python -c "import phenome_utils; print(phenome_utils.__file__)"
-    - python -c "import phenome_utils; print(dir(phenome_utils))"
-    - cd phenome-arivale
     - ruff check .
     - pytest tests/ -v
   tags:
