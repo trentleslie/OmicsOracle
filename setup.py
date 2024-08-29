@@ -12,8 +12,8 @@ setup(
         "gradio",
         # Add any other dependencies here
     ],
-    author="Your Name",
-    author_email="your.email@example.com",
+    author="Trent Leslie",
+    author_email="trent.leslie@phenomehealth.org",
     description="A biomedical query system integrating Gemini API and Spoke knowledge graph",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
