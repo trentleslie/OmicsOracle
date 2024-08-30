@@ -1,7 +1,6 @@
 import unittest
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock
 from omics_oracle.gradio_interface import create_interface, process_query
-import logging
 
 class TestGradioInterface(unittest.TestCase):
     @patch('omics_oracle.gradio_interface.gr')
