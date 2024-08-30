@@ -1,46 +1,63 @@
-# omics_oracle/gradio_interface.py
-
 import gradio as gr
-from .query_manager import QueryManager
-from .gemini_wrapper import GeminiWrapper
-from .spoke_wrapper import SpokeWrapper
+from omics_oracle.query_manager import QueryManager
+import logging
 
-def create_interface(query_manager: QueryManager):
-    def process_query(query: str) -> str:
-        try:
-            results = query_manager.process_query(query)
-            return f"""
-            Original Query: {results['original_query']}
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
-            Gemini Interpretation: {results['gemini_interpretation']}
+def process_query(query: str, query_manager: QueryManager) -> str:
+    logger.debug(f"Processing query: {query}")
+    try:
+        results = query_manager.process_query(query)
+        return f'''Original Query:
+{results['original_query']}
 
-            AQL Query: {results['aql_query']}
+Gemini Interpretation:
+{results['gemini_interpretation']}
 
-            Spoke Results: {results['spoke_results']}
+AQL Query:
+{results['aql_query']}
 
-            Final Interpretation: {results['final_interpretation']}
-            """
-        except Exception as e:
-            return f"An error occurred: {str(e)}"
+Spoke Results:
+{results['spoke_results']}
 
-    iface = gr.Interface(
-        fn=process_query,
-        inputs=gr.Textbox(lines=2, placeholder="Enter your biomedical query here..."),
-        outputs="text",
-        title="OmicsOracle: Biomedical Query System",
-        description="Enter a natural language query about biomedical data, and get insights from our knowledge graph!"
-    )
-    return iface
+Final Interpretation:
+{results['final_interpretation']}'''
+    except Exception as e:
+        logger.error(f"Error processing query: {str(e)}")
+        return f'An error occurred: {str(e)}'
 
-def launch_interface():
-    # Initialize your wrappers and query manager here
-    gemini_wrapper = GeminiWrapper(api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL")
-    spoke_wrapper = SpokeWrapper(host="YOUR_HOST", db_name="YOUR_DB_NAME", username="YOUR_USERNAME", password="YOUR_PASSWORD")
-    query_manager = QueryManager(gemini_wrapper, spoke_wrapper)
+def create_interface(query_manager: QueryManager) -> gr.Blocks:
+    logger.debug("Creating Gradio interface")
+    with gr.Blocks(theme=gr.themes.Soft(primary_hue='blue', secondary_hue='gray', neutral_hue='slate')) as demo:
+        gr.Markdown('# OmicsOracle')
+        with gr.Column(scale=1, min_width=800):
+            input_text = gr.Textbox(
+                label='Enter your biomedical query',
+                placeholder='e.g. What genes are associated with Alzheimer\'s disease?',
+                lines=5
+            )
+            submit_btn = gr.Button('Submit Query', size='sm')
+            output_text = gr.Textbox(label='Query Results', lines=20)
 
-    # Create and launch the interface
-    iface = create_interface(query_manager)
-    iface.launch()
+        logger.debug("Setting up click event")
+        submit_btn.click(
+            fn=lambda query: process_query(query, query_manager),
+            inputs=input_text,
+            outputs=output_text,
+            api_name='query'
+        )
+        logger.debug("Click event set up successfully")
 
-if __name__ == "__main__":
-    launch_interface()
+    logger.debug("Gradio interface created successfully")
+    return demo
+
+custom_css = """
+/* Your custom CSS here */
+"""
+
+def create_styled_interface(query_manager: QueryManager) -> gr.Blocks:
+    logger.debug("Creating styled interface")
+    interface = create_interface(query_manager)
+    interface.css = custom_css
+    return interface

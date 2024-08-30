@@ -1,11 +1,14 @@
 .ruff_cache
+code_execution_env
+omics_oracle/__pycache__/
+tests/__pycache__
 
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
-*pyc
+*.pyc
 
 # Virtual Environment
 venv/
