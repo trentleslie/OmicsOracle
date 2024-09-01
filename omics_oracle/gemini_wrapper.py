@@ -1,18 +1,39 @@
 # omics_oracle/gemini_wrapper.py
 
+import os
 import requests
+import json
+import httpx
 from typing import Dict, Any, List
 from .logger import setup_logger
+from dotenv import load_dotenv
 
 class GeminiWrapper:
-    def __init__(self, api_key: str, base_url: str):
-        self.api_key = api_key
-        self.base_url = base_url
+    def __init__(self):
+        self.logger = setup_logger(__name__)
+        self._load_environment()
         self.headers = {
-            "Authorization": f"Bearer {self.api_key}",
+            "Authorization": self.api_key,
             "Content-Type": "application/json"
         }
-        self.logger = setup_logger(__name__)
+
+    def _load_environment(self):
+        """Load environment variables from .env file."""
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        dotenv_path = os.path.join(current_dir, '..', '.env')
+        self.logger.info(f"Looking for .env file at: {dotenv_path}")
+        
+        if load_dotenv(dotenv_path):
+            self.logger.info("Successfully loaded .env file")
+        else:
+            self.logger.error("Failed to load .env file")
+            raise ValueError("Failed to load .env file")
+
+        self.api_key = os.getenv('GEMINI_AUTH')
+        self.base_url = os.getenv('GEMINI_URL')
+
+        if not self.api_key or not self.base_url:
+            raise ValueError("GEMINI_AUTH and GEMINI_URL must be set in the .env file")
 
     def send_query(self, query: str, context: str = "general") -> Dict[str, Any]:
         """
@@ -34,14 +55,21 @@ class GeminiWrapper:
             "messages": [{"role": "user", "content": prompt}]
         }
 
+        self.logger.info(f"Sending request to: {self.base_url}")
+        self.logger.debug(f"Headers: {json.dumps(self.headers, indent=2)}")
+        self.logger.debug(f"Payload: {json.dumps(payload, indent=2)}")
+
         try:
-            self.logger.info(f"Sending query to Gemini API: {prompt}")
             response = requests.post(self.base_url, headers=self.headers, json=payload)
+            self.logger.info(f"Response status code: {response.status_code}")
+            self.logger.debug(f"Response headers: {json.dumps(dict(response.headers), indent=2)}")
+            self.logger.debug(f"Response content: {response.text}")
             response.raise_for_status()
-            self.logger.info("Successfully received response from Gemini API")
             return response.json()
         except requests.RequestException as e:
             self.logger.error(f"Error sending query to Gemini API: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                self.logger.error(f"Error response content: {e.response.text}")
             raise
 
     def interpret_response(self, response: Dict[str, Any]) -> str:

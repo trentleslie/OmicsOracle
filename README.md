@@ -12,16 +12,24 @@ cd omics_oracle
 pip install -r requirements.txt
 ```
 
-## Usage
+## Configuration
 
-To use OmicsOracle, you need to set up your API keys and connection details for the Gemini API and Spoke knowledge graph. Update the `launch_interface` function in `omics_oracle/gradio_interface.py` with your credentials:
+OmicsOracle uses environment variables for configuration. Create a `.env` file in the root directory of the project with the following content:
 
-```python
-gemini_wrapper = GeminiWrapper(api_key="YOUR_API_KEY", base_url="YOUR_BASE_URL")
-spoke_wrapper = SpokeWrapper(host="YOUR_HOST", db_name="YOUR_DB_NAME", username="YOUR_USERNAME", password="YOUR_PASSWORD")
+```
+GEMINI_AUTH=your_gemini_auth_key
+GEMINI_URL=your_gemini_api_url
+ARANGO_HOST=your_arango_host
+ARANGO_DB=your_arango_database_name
+ARANGO_USERNAME=your_arango_username
+ARANGO_PASSWORD=your_arango_password
 ```
 
-Then, you can run the Gradio interface:
+Make sure to replace the placeholder values with your actual API keys and connection details.
+
+## Usage
+
+To use OmicsOracle, you can run the Gradio interface:
 
 ```bash
 python -m omics_oracle.gradio_interface
@@ -39,6 +47,13 @@ To contribute to OmicsOracle, please follow these steps:
 4. Write tests for your new feature
 5. Run the test suite to ensure all tests pass
 6. Submit a pull request
+
+## Recent Changes
+
+- Updated both GeminiWrapper and SpokeWrapper to load configuration from environment variables
+- Improved error handling and logging in both wrappers
+- SpokeWrapper now uses pyArango instead of arango-python-driver for consistency
+- Updated the initialization process for both wrappers to use environment variables
 
 ## License
 
