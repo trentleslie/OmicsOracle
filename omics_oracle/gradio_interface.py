@@ -1,65 +1,29 @@
 import gradio as gr
 from omics_oracle.query_manager import QueryManager
-
 import logging
 
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 def process_query(query: str, query_manager: QueryManager) -> str:
+    """
+    Process the user query using the QueryManager.
+
+    Args:
+        query (str): The user's input query.
+        query_manager (QueryManager): The QueryManager instance.
+
+    Returns:
+        str: The response to the user's query.
+    """
+    logger.debug(f"Processing query: {query}")
     try:
-        logger.debug(f"Processing query: {query}")
-        results = query_manager.process_query(query)
-        return f"""
-Original Query:
-{results['original_query']}
-
-Gemini Interpretation:
-{results['gemini_interpretation']}
-
-AQL Query:
-{results['aql_query']}
-
-Spoke Results:
-{results['spoke_results']}
-
-Final Interpretation:
-{results['final_interpretation']}
-        """
+        response = query_manager.process_query(query)
+        return response
     except Exception as e:
-        logger.error(f"Error processing query: {str(e)}")
-        return f'An error occurred: {str(e)}'
-
-def create_interface(query_manager: QueryManager) -> gr.Blocks:
-    logger.debug("Creating Gradio interface")
-    with gr.Blocks(theme=gr.themes.Soft(primary_hue="blue", secondary_hue="gray", neutral_hue="slate")) as demo:
-        gr.Markdown("# OmicsOracle")
-        
-        # Center the content
-        with gr.Column(scale=1, elem_id="centered-content"):
-            # Input text box
-            input_text = gr.Textbox(
-                label="Enter your biomedical query",
-                placeholder="e.g. What genes are associated with Alzheimer's disease?",
-                lines=5
-            )
-            
-            # Submit button
-            submit_btn = gr.Button("Submit Query")
-            
-            # Output text box
-            output_text = gr.Textbox(label="Query Results", lines=20)
-            
-            logger.debug("Setting up click event")
-            submit_btn.click(
-                lambda query: process_query(query, query_manager),
-                inputs=input_text,
-                outputs=output_text,
-                api_name="query"
-            )
-            logger.debug("Click event set up successfully")
-
-    logger.debug("Gradio interface created successfully")
-    return demo
+        logger.error(f"Error processing query: {e}")
+        return f"An error occurred while processing your query: {str(e)}"
 
 custom_css = """
 body {
@@ -130,8 +94,37 @@ footer {
 }
 """
 
-def create_styled_interface(query_manager: QueryManager) -> gr.Blocks:
-    logger.debug("Creating styled interface")
-    interface = create_interface(query_manager)
-    interface.css = custom_css
+def create_styled_interface(query_manager: QueryManager) -> gr.Interface:
+    """
+    Create and configure a styled Gradio interface for the OmicsOracle system.
+
+    Args:
+        query_manager (QueryManager): The QueryManager instance.
+
+    Returns:
+        gr.Interface: The configured Gradio interface with custom styling.
+    """
+    logger.debug("Creating styled Gradio interface")
+    def wrapped_process_query(query: str) -> str:
+        return process_query(query, query_manager)
+
+    with gr.Blocks(css=custom_css) as interface:
+        with gr.Column(elem_id="centered-content"):
+            gr.Markdown("# OmicsOracle Biomedical Query System")
+            
+            query_input = gr.Textbox(
+                lines=5,
+                placeholder="Enter your biomedical query here...",
+                label="Query"
+            )
+            
+            submit_button = gr.Button("Submit Query")
+
+            response_output = gr.Textbox(label="Response", lines=10)
+            
+            gr.Markdown("Enter a biomedical query, and the system will provide an answer based on the available data.")
+            
+            submit_button.click(wrapped_process_query, inputs=query_input, outputs=response_output)
+
+    logger.debug("Styled Gradio interface created successfully")
     return interface

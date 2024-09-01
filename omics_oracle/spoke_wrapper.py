@@ -4,11 +4,11 @@ import os
 from dotenv import load_dotenv
 from pyArango.connection import Connection
 from typing import Dict, Any, List
-from .logger import setup_logger
+import logging
 
 class SpokeWrapper:
     def __init__(self):
-        self.logger = setup_logger(__name__)
+        self.logger = logging.getLogger(__name__)
         self._load_environment()
         self._connect_to_database()
 
@@ -63,7 +63,8 @@ class SpokeWrapper:
             List[Dict[str, Any]]: The query results as a list of dictionaries.
         """
         try:
-            self.logger.info(f"Executing AQL query: {query}")
+            self.logger.info("Executing AQL query")
+            self.logger.debug(f"AQL query: {query}")
             results = list(self.db.AQLQuery(query, bindVars=bind_vars, rawResults=True))
             self.logger.info(f"AQL query executed successfully. Retrieved {len(results)} results.")
             return results
@@ -84,7 +85,7 @@ class SpokeWrapper:
         """
         try:
             entity = self.db[collection][key]
-            self.logger.info(f"Successfully retrieved entity with key: {key} from collection: {collection}")
+            self.logger.info(f"Successfully retrieved entity from collection: {collection}")
             return entity
         except Exception as e:
             self.logger.error(f"Failed to retrieve entity: {e}")

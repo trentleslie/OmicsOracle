@@ -1,5 +1,5 @@
-requests==2.26.0
+requests==2.31.0
 pyArango==2.0.1
-gradio==3.34.0
-python-dotenv==0.19.2
-httpx==0.23.0
+gradio==3.50.2
+python-dotenv==1.0.0
+httpx==0.25.2

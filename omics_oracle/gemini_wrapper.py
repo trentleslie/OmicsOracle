@@ -4,12 +4,12 @@ import os
 import requests
 import json
 from typing import Dict, Any, List
-from .logger import setup_logger
+import logging
 from dotenv import load_dotenv
 
 class GeminiWrapper:
     def __init__(self):
-        self.logger = setup_logger(__name__)
+        self.logger = logging.getLogger(__name__)
         self._load_environment()
         self.headers = {
             "Authorization": self.api_key,
@@ -54,13 +54,14 @@ class GeminiWrapper:
             "messages": [{"role": "user", "content": prompt}]
         }
 
-        self.logger.info(f"Sending request to: {self.base_url}")
+        self.logger.info("Sending request to Gemini API")
         self.logger.debug(f"Headers: {json.dumps(self.headers, indent=2)}")
         self.logger.debug(f"Payload: {json.dumps(payload, indent=2)}")
 
         try:
             response = requests.post(self.base_url, headers=self.headers, json=payload)
-            self.logger.info(f"Response status code: {response.status_code}")
+            self.logger.info("Received response from Gemini API")
+            self.logger.debug(f"Response status code: {response.status_code}")
             self.logger.debug(f"Response headers: {json.dumps(dict(response.headers), indent=2)}")
             self.logger.debug(f"Response content: {response.text}")
             response.raise_for_status()

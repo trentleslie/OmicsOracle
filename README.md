@@ -1,6 +1,6 @@
 # OmicsOracle
 
-OmicsOracle is a Python package that integrates the Gemini API, Spoke knowledge graph API, and a Gradio interface to create a user-friendly system for querying and analyzing biomedical data.
+OmicsOracle is a Python package that integrates the Gemini API, SPOKE knowledge graph (using ArangoDB), and a Gradio interface to create a user-friendly system for querying and analyzing biomedical data.
 
 ## Installation
 
@@ -29,13 +29,13 @@ Make sure to replace the placeholder values with your actual API keys and connec
 
 ## Usage
 
-To use OmicsOracle, you can run the Gradio interface:
+To use OmicsOracle, you can run the Gradio interface using the following command from the project root directory:
 
 ```bash
-python -m omics_oracle.gradio_interface
+python run_gradio_interface.py
 ```
 
-This will launch a web interface where you can enter your biomedical queries.
+This will launch a web interface where you can enter your biomedical queries. The interface will be accessible in your web browser, typically at `http://localhost:7860` unless specified otherwise.
 
 ## Development
 
@@ -52,8 +52,10 @@ To contribute to OmicsOracle, please follow these steps:
 
 - Updated both GeminiWrapper and SpokeWrapper to load configuration from environment variables
 - Improved error handling and logging in both wrappers
-- SpokeWrapper now uses pyArango instead of arango-python-driver for consistency
+- SpokeWrapper continues to use pyArango for interacting with the ArangoDB-based SPOKE database
 - Updated the initialization process for both wrappers to use environment variables
+- Integrated Gradio interface for a user-friendly query system
+- Added run_gradio_interface.py for easy launching of the Gradio interface
 
 ## License
 

@@ -1,9 +1,22 @@
-import os
+import logging
 from dotenv import load_dotenv
 from omics_oracle.gemini_wrapper import GeminiWrapper
 from omics_oracle.spoke_wrapper import SpokeWrapper
 from omics_oracle.query_manager import QueryManager
 from omics_oracle.gradio_interface import create_styled_interface
+import sys
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+logger = logging.getLogger(__name__)
+
+# Reduce logging level for some noisy libraries
+logging.getLogger('urllib3').setLevel(logging.WARNING)
+logging.getLogger('httpx').setLevel(logging.WARNING)
+logging.getLogger('httpcore').setLevel(logging.WARNING)
+
+# Set logging level for omics_oracle modules
+logging.getLogger('omics_oracle').setLevel(logging.INFO)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -15,37 +28,29 @@ def main():
     This function sets up the Gemini API and SPOKE database connections,
     initializes the query manager, and launches the Gradio interface.
     """
-    # Gemini API configuration
-    gemini_auth = os.getenv('GEMINI_AUTH')
-    gemini_url = os.getenv('GEMINI_URL')
-
-    if not gemini_auth or not gemini_url:
-        raise ValueError("GEMINI_AUTH and GEMINI_URL must be set in the .env file")
-
-    # SPOKE configuration
-    spoke_host = os.getenv('SPOKE_HOST')
-    spoke_db = os.getenv('SPOKE_DB')
-    spoke_username = os.getenv('SPOKE_USERNAME')
-    spoke_password = os.getenv('SPOKE_PASSWORD')
-
-    if not spoke_host or not spoke_db or not spoke_username or not spoke_password:
-        raise ValueError("SPOKE_HOST, SPOKE_DB, SPOKE_USERNAME, and SPOKE_PASSWORD must be set in the .env file")
+    logger.info("Initializing OmicsOracle biomedical query system...")
 
     # Initialize wrappers
-    gemini_wrapper = GeminiWrapper(api_key=gemini_auth, base_url=gemini_url)
-    spoke_wrapper = SpokeWrapper(
-        host=spoke_host,
-        db_name=spoke_db,
-        username=spoke_username,
-        password=spoke_password
-    )
+    gemini_wrapper = GeminiWrapper()
+    spoke_wrapper = SpokeWrapper()
 
     # Initialize the query manager
     query_manager = QueryManager(gemini_wrapper, spoke_wrapper)
 
     # Create and launch the Gradio interface
+    logger.info("Creating Gradio interface...")
     interface = create_styled_interface(query_manager)
-    interface.launch(share=True)
+    
+    logger.info("Launching Gradio interface...")
+    try:
+        interface.launch(share=True)
+    except KeyboardInterrupt:
+        logger.info("Gracefully shutting down the server...")
+        interface.close()
+        sys.exit(0)
+    except Exception as e:
+        logger.error(f"An error occurred: {str(e)}")
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
