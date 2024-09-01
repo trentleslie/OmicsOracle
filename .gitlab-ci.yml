@@ -28,7 +28,6 @@ test:
   script:
     - pwd
     - ls -la
-    - pip install -e .
     - ruff check .
     - pytest tests/ -v
   tags:
@@ -38,7 +37,8 @@ build:
   stage: build
   script:
     - echo "Building the project"
-    - python setup.py sdist bdist_wheel
+    - mkdir -p dist
+    - zip -r dist/omics_oracle.zip omics_oracle run_gradio_interface.py requirements.txt
   artifacts:
     paths:
       - dist/*
@@ -52,7 +52,7 @@ pages:
   stage: build
   script:
     - echo "Generating documentation"
-    # Add commands to generate your documentation
+    # Add commands to generate your documentation, if applicable
   artifacts:
     paths:
       - public
