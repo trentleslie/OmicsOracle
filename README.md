@@ -4,13 +4,18 @@ OmicsOracle is a Python package that integrates the Gemini API, SPOKE knowledge 
 
 ## Installation
 
-To install OmicsOracle, clone this repository and install the required dependencies:
+To install OmicsOracle, follow these steps:
 
-```bash
-git clone https://github.com/yourusername/omics_oracle.git
-cd omics_oracle
-pip install -r requirements.txt
-```
+1. Clone this repository:
+   ```bash
+   git clone https://git.phenome.health/trent.leslie/omicsoracle.git
+   cd omicsoracle
+   ```
+
+2. Install the required dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
 ## Configuration
 
@@ -29,11 +34,19 @@ Make sure to replace the placeholder values with your actual API keys and connec
 
 ## Usage
 
-To use OmicsOracle, you can run the Gradio interface using the following command from the project root directory:
+To use OmicsOracle, follow these steps:
 
-```bash
-python run_gradio_interface.py
-```
+1. Ensure you have installed all dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. Set up the environment variables by creating a `.env` file as described in the Configuration section.
+
+3. Run the Gradio interface using the following command from the project root directory:
+   ```bash
+   python run_gradio_interface.py
+   ```
 
 This will launch a web interface where you can enter your biomedical queries. The interface will be accessible in your web browser, typically at `http://localhost:7860` unless specified otherwise.
 
