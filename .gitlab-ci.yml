@@ -21,11 +21,11 @@ before_script:
   - pip --version
   - pip install --upgrade pip
   - pip install -r requirements.txt
-  - pip install pytest ruff
 
 test:
   stage: test
   script:
+    - pip install pytest ruff
     - pwd
     - ls -la
     - ruff check .
@@ -38,7 +38,7 @@ build:
   script:
     - echo "Building the project"
     - mkdir -p dist
-    - zip -r dist/omics_oracle.zip omics_oracle run_gradio_interface.py requirements.txt
+    - tar -czvf dist/omics_oracle.tar.gz omics_oracle run_gradio_interface.py requirements.txt
   artifacts:
     paths:
       - dist/*
