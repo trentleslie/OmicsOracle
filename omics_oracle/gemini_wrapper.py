@@ -3,7 +3,6 @@
 import os
 import requests
 import json
-import httpx
 from typing import Dict, Any, List
 from .logger import setup_logger
 from dotenv import load_dotenv

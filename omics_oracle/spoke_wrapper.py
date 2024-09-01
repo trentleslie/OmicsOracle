@@ -1,7 +1,6 @@
 # omics_oracle/spoke_wrapper.py
 
 import os
-import logging
 from dotenv import load_dotenv
 from pyArango.connection import Connection
 from typing import Dict, Any, List
