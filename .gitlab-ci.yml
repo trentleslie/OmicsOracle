@@ -36,6 +36,9 @@ test:
 
 build:
   stage: build
+  script:
+    - echo "Building the project"
+    - python setup.py sdist bdist_wheel
   artifacts:
     paths:
       - dist/*
@@ -47,6 +50,9 @@ build:
 # Optionally add documentation generation if needed
 pages:
   stage: build
+  script:
+    - echo "Generating documentation"
+    # Add commands to generate your documentation
   artifacts:
     paths:
       - public
