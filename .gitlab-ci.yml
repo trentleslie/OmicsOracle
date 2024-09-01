@@ -36,8 +36,6 @@ test:
 
 build:
   stage: build
-  script:
-    - python setup.py sdist bdist_wheel
   artifacts:
     paths:
       - dist/*
@@ -49,17 +47,6 @@ build:
 # Optionally add documentation generation if needed
 pages:
   stage: build
-  script:
-    - pip install sphinx sphinx-rtd-theme
-    - if [ ! -d "doc" ]; then
-        mkdir doc;
-        cd doc;
-        sphinx-quickstart -q -p "OmicsOracle" -a "Trent Leslie" --ext-autodoc --ext-viewcode .;
-        cd ..;
-      fi
-    - cd doc
-    - make html
-    - mv _build/html/ ../public/
   artifacts:
     paths:
       - public
