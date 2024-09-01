@@ -29,7 +29,7 @@ test:
     - pwd
     - ls -la
     - pip install -e .
-    - ruff check . --fix
+    - ruff check .
     - pytest tests/ -v
   tags:
     - docker
