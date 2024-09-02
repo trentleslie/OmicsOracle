@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 from omics_oracle.gradio_interface import create_styled_interface, process_query, custom_css
+from omics_oracle.query_manager import QueryManager
 import logging
 
 class TestGradioInterface(unittest.TestCase):
@@ -12,7 +13,8 @@ class TestGradioInterface(unittest.TestCase):
 
         # Set up log capture
         with self.assertLogs(logger, level='DEBUG') as log_capture:
-            mock_query_manager = MagicMock()
+            # Mock QueryManager
+            mock_query_manager = MagicMock(spec=QueryManager)
 
             # Mock Gradio components
             mock_blocks = MagicMock()
@@ -50,7 +52,7 @@ class TestGradioInterface(unittest.TestCase):
             self.assertIsNotNone(click_args, "Click arguments are None")
             args, kwargs = click_args
             self.assertEqual(len(args), 1, "Expected one positional argument")
-            self.assertTrue(callable(args[0]), "First argument should be a callable (wrapped_process_query)")
+            self.assertTrue(callable(args[0]), "First argument should be a callable (lambda function)")
             self.assertIn('inputs', kwargs, "Missing 'inputs' keyword argument")
             self.assertIn('outputs', kwargs, "Missing 'outputs' keyword argument")
             self.assertEqual(kwargs['inputs'], mock_textbox)
@@ -62,14 +64,18 @@ class TestGradioInterface(unittest.TestCase):
 
     @patch('omics_oracle.gradio_interface.logger')
     def test_process_query(self, mock_logger):
-        mock_query_manager = MagicMock()
+        mock_query_manager = MagicMock(spec=QueryManager)
         mock_query_manager.process_query.return_value = "Processed query result"
 
         result = process_query("Test query", mock_query_manager)
+        
         self.assertEqual(result, "Processed query result")
 
         # Check if the debug log message was called
         mock_logger.debug.assert_called_once_with("Processing query: Test query")
+
+        # Check if the query_manager's process_query method was called
+        mock_query_manager.process_query.assert_called_once_with("Test query")
 
 if __name__ == '__main__':
     unittest.main()

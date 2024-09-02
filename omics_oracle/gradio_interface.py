@@ -1,9 +1,10 @@
 import gradio as gr
 from omics_oracle.query_manager import QueryManager
 import logging
+import traceback
 
 # Set up logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, filename='error.log')
 logger = logging.getLogger(__name__)
 
 def process_query(query: str, query_manager: QueryManager) -> str:
@@ -12,7 +13,7 @@ def process_query(query: str, query_manager: QueryManager) -> str:
 
     Args:
         query (str): The user's input query.
-        query_manager (QueryManager): The QueryManager instance.
+        query_manager (QueryManager): The QueryManager instance to process the query.
 
     Returns:
         str: The response to the user's query.
@@ -22,8 +23,8 @@ def process_query(query: str, query_manager: QueryManager) -> str:
         response = query_manager.process_query(query)
         return response
     except Exception as e:
-        logger.error(f"Error processing query: {e}")
-        return f"An error occurred while processing your query: {str(e)}"
+        logger.error(f"Error processing query: {e}\n\n{traceback.format_exc()}")
+        return f"An error occurred while processing your query: {str(e)}\n\n{traceback.format_exc()}"
 
 custom_css = """
 body {
@@ -99,14 +100,12 @@ def create_styled_interface(query_manager: QueryManager) -> gr.Interface:
     Create and configure a styled Gradio interface for the OmicsOracle system.
 
     Args:
-        query_manager (QueryManager): The QueryManager instance.
+        query_manager (QueryManager): The QueryManager instance to process queries.
 
     Returns:
         gr.Interface: The configured Gradio interface with custom styling.
     """
     logger.debug("Creating styled Gradio interface")
-    def wrapped_process_query(query: str) -> str:
-        return process_query(query, query_manager)
 
     with gr.Blocks(css=custom_css) as interface:
         with gr.Column(elem_id="centered-content"):
@@ -124,7 +123,15 @@ def create_styled_interface(query_manager: QueryManager) -> gr.Interface:
             
             gr.Markdown("Enter a biomedical query, and the system will provide an answer based on the available data.")
             
-            submit_button.click(wrapped_process_query, inputs=query_input, outputs=response_output)
+            submit_button.click(lambda q: process_query(q, query_manager), inputs=query_input, outputs=response_output)
 
     logger.debug("Styled Gradio interface created successfully")
     return interface
+
+if __name__ == "__main__":
+    # This is just for testing purposes. In production, use run_gradio_interface.py
+    from omics_oracle.gemini_wrapper import GeminiWrapper
+    from omics_oracle.spoke_wrapper import SpokeWrapper
+    test_query_manager = QueryManager(GeminiWrapper(), SpokeWrapper())
+    demo = create_styled_interface(test_query_manager)
+    demo.launch()
