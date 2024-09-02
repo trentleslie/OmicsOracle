@@ -28,19 +28,20 @@ before_script:
 test:
   stage: test
   script:
-    - pip install pytest ruff
-    - pwd
-    - ls -la
-    - ls -la omics_oracle/
-    - echo "OpenAI package version:"
-    - pip show openai | grep Version
-    - echo "PYTHONPATH: $PYTHONPATH"
-    - echo "Content of parent directory:"
-    - ls -la ..
-    - echo "Content of current directory:"
-    - ls -la .
-    - ruff check .
-    - PYTHONPATH=$PYTHONPATH:$CI_PROJECT_DIR/.. pytest tests/ -v
+    - |
+      pip install pytest ruff
+      pwd
+      ls -la
+      ls -la omics_oracle/
+      echo "OpenAI package version:"
+      pip show openai | grep Version
+      echo "PYTHONPATH: $PYTHONPATH"
+      echo "Content of parent directory:"
+      ls -la ..
+      echo "Content of current directory:"
+      ls -la .
+      ruff check .
+      PYTHONPATH=$PYTHONPATH:$CI_PROJECT_DIR/.. pytest tests/ -v
   tags:
     - docker
 
