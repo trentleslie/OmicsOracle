@@ -75,7 +75,8 @@ pages:
 # Placeholder for deployment script
 deploy:
   stage: deploy
-  script: echo "Define your deployment script!"
+  script: 
+    - echo "Define your deployment script!"
   environment: production
   tags:
     - docker
