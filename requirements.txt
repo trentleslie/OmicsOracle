@@ -3,3 +3,4 @@ pyArango==2.0.1
 gradio==3.50.2
 python-dotenv==1.0.0
 httpx==0.25.2
+openai==1.42.0
