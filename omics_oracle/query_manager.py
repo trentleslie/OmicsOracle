@@ -29,20 +29,35 @@ class QueryManager:
             raise
 
         # Initialize the ArangoDB client and connect to the database
-        self.client = ArangoClient(hosts='http://127.0.0.1:8529')
-        self.db = self.client.db('spoke23_human', username='root', password='ph')
+        try:
+            self.client = ArangoClient(hosts='http://127.0.0.1:8529')
+            self.db = self.client.db('spoke23_human', username='root', password='ph')
+            self.logger.info("ArangoDB connection successful!")
+        except Exception as e:
+            self.logger.error(f"ArangoDB connection failed: {e}")
+            raise
 
         # Fetch the existing graph from the database
-        self.graph = ArangoGraph(self.db)
+        try:
+            self.graph = ArangoGraph(self.db)
+            self.logger.info("ArangoGraph initialization successful!")
+        except Exception as e:
+            self.logger.error(f"ArangoGraph initialization failed: {e}")
+            raise
 
         # Instantiate ArangoGraphQAChain
-        self.qa_chain = ArangoGraphQAChain.from_llm(
-            self.llm, 
-            graph=self.graph, 
-            verbose=True, 
-            return_aql_query=True, 
-            return_aql_result=True
-        )
+        try:
+            self.qa_chain = ArangoGraphQAChain.from_llm(
+                self.llm, 
+                graph=self.graph, 
+                verbose=True, 
+                return_aql_query=True, 
+                return_aql_result=True
+            )
+            self.logger.info("ArangoGraphQAChain initialization successful!")
+        except Exception as e:
+            self.logger.error(f"ArangoGraphQAChain initialization failed: {e}")
+            raise
 
     def capture_stdout(self, func, *args, **kwargs) -> str:
         f = io.StringIO()
@@ -52,8 +67,12 @@ class QueryManager:
         return captured_output
 
     def execute_aql(self, query: str) -> Dict[str, str]:
-        captured_output = self.capture_stdout(self.qa_chain.invoke, {self.qa_chain.input_key: query})
-        return {'captured_output': captured_output}
+        try:
+            captured_output = self.capture_stdout(self.qa_chain.invoke, {self.qa_chain.input_key: query})
+            return {'captured_output': captured_output}
+        except Exception as e:
+            self.logger.error(f"Error executing AQL query: {e}")
+            return {'error': str(e)}
 
     def clean_output(self, output: str) -> str:
         ansi_escape = re.compile(r'\x1B[@-_][0-?]*[ -/]*[@-~]')
@@ -89,11 +108,18 @@ class QueryManager:
             "that explains the associations between the genes and pathways:\n\n"
             f"AQL Results: {aql_result}\n\n"
         )
-        response = self.llm.invoke(prompt)
-        return response.content
+        try:
+            response = self.llm.invoke(prompt)
+            return response.content
+        except Exception as e:
+            self.logger.error(f"Error interpreting AQL result: {e}")
+            return "Error interpreting results."
 
     def sequential_chain(self, query: str) -> Dict[str, Any]:
         response = self.execute_aql(query)
+        if 'error' in response:
+            return {'error': response['error']}
+        
         captured_output = response['captured_output']
         final_response = self.extract_aql_result(captured_output)
         
@@ -128,6 +154,11 @@ class QueryManager:
         while attempt <= max_attempts and not success:
             self.logger.debug(f"Attempt {attempt}: Executing query...")
             response = self.sequential_chain(full_query)
+            
+            if 'error' in response:
+                self.logger.error(f"Error in attempt {attempt}: {response['error']}")
+                return {"error": f"An error occurred: {response['error']}"}
+            
             aql_result = response.get('aql_result', [])
 
             if aql_result:

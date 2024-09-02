@@ -142,14 +142,23 @@ class TestGradioInterface(unittest.TestCase):
 
     @patch('omics_oracle.query_manager.SpokeWrapper')
     @patch('omics_oracle.query_manager.OpenAIWrapper')
-    def test_spoke_wrapper_integration(self, MockOpenAIWrapper, MockSpokeWrapper):
-        # Create mock SpokeWrapper and OpenAIWrapper instances
+    @patch('omics_oracle.query_manager.ArangoClient')
+    @patch('omics_oracle.query_manager.ArangoGraph')
+    @patch('omics_oracle.query_manager.ArangoGraphQAChain')
+    def test_spoke_wrapper_integration(self, MockArangoGraphQAChain, MockArangoGraph, MockArangoClient, MockOpenAIWrapper, MockSpokeWrapper):
+        # Create mock instances
         mock_spoke = MockSpokeWrapper.return_value
         mock_openai = MockOpenAIWrapper.return_value
+        MockArangoClient.return_value.db.return_value
+        MockArangoGraph.return_value
+        mock_qa_chain = MockArangoGraphQAChain.from_llm.return_value
+
+        # Set up mock return values
         mock_spoke.execute_query.return_value = [{"protein": "P53", "disease": "Cancer"}]
         mock_openai.api_key = "test_api_key"
+        mock_qa_chain.invoke.return_value = "Mocked AQL result"
 
-        # Create a QueryManager with the mocked SpokeWrapper and OpenAIWrapper
+        # Create a QueryManager with the mocked dependencies
         query_manager = QueryManager(spoke_wrapper=mock_spoke, openai_wrapper=mock_openai)
 
         # Mock the QueryManager's process_query method
@@ -174,6 +183,11 @@ class TestGradioInterface(unittest.TestCase):
 
         # Verify that the QueryManager's process_query method was called
         query_manager.process_query.assert_called_once_with(query)
+
+        # Verify that the mocked ArangoDB components were used
+        MockArangoClient.assert_called_once()
+        MockArangoGraph.assert_called_once()
+        MockArangoGraphQAChain.from_llm.assert_called_once()
 
 if __name__ == '__main__':
     unittest.main()

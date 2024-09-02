@@ -51,8 +51,10 @@ def test_error_handling(query_manager):
     # Test error handling in the process_query method
     query_manager.qa_chain.invoke.side_effect = Exception("Test error")
 
-    with pytest.raises(Exception):
-        query_manager.process_query("Test query")
+    result = query_manager.process_query("Test query")
+
+    assert "error" in result
+    assert "An error occurred: Test error" in result["error"]
 
 def test_execute_aql(query_manager):
     query_manager.qa_chain.invoke.return_value = {"result": "mocked AQL result"}
