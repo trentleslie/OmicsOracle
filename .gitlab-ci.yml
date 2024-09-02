@@ -32,12 +32,16 @@ test:
       pip install pytest pytest-mock ruff
       pwd
       ls -la
+      # Create mock prompts.py file
+      echo "base_prompt = 'This is a mock base prompt'" > omics_oracle/prompts.py
       ls -la omics_oracle/
       echo "OpenAI package version:"
       pip show openai | grep Version
       echo "PYTHONPATH: $PYTHONPATH"
       echo "Content of current directory:"
       ls -la .
+      echo "Content of mock prompts.py:"
+      cat omics_oracle/prompts.py
       ruff check .
       pytest tests/ -v
   tags:
