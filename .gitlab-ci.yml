@@ -4,7 +4,7 @@ image: python:3.9
 # Cache pip dependencies
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  PYTHONPATH: "$CI_PROJECT_DIR"
+  PYTHONPATH: "$CI_PROJECT_DIR:$CI_PROJECT_DIR/omics_oracle"
 
 cache:
   paths:
@@ -31,8 +31,16 @@ test:
     - pip install pytest ruff
     - pwd
     - ls -la
+    - ls -la omics_oracle/
+    - echo "OpenAI package version:"
+    - pip show openai | grep Version
+    - echo "PYTHONPATH: $PYTHONPATH"
+    - echo "Content of parent directory:"
+    - ls -la ..
+    - echo "Content of current directory:"
+    - ls -la .
     - ruff check .
-    - pytest tests/ -v
+    - PYTHONPATH=$PYTHONPATH:$CI_PROJECT_DIR/.. pytest tests/ -v
   tags:
     - docker
 

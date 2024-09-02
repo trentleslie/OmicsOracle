@@ -2,7 +2,7 @@ import os
 import logging
 from dotenv import load_dotenv
 from openai import OpenAI
-from prompts import base_prompt  # Import the base prompt from prompts.py
+from ..prompts import base_prompt
 
 class OpenAIWrapper:
     def __init__(self):
