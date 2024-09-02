@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock, call
 from omics_oracle.query_manager import QueryManager
 from omics_oracle.openai_wrapper import OpenAIWrapper
+from omics_oracle.prompts import base_prompt
 
 def truncate(text: str, max_length: int = 100) -> str:
     return text[:max_length] + "..." if len(text) > max_length else text
@@ -40,16 +41,21 @@ def test_process_query(query_manager):
     assert "interpretation" in result
     assert "attempt_count" in result
 
-    full_query = "Test biomedical query\n    <System Instructions>Answer the above question using the following data model and query format...</System Instructions>"
-    query_manager.logger.debug.assert_has_calls([
-        call(f"Starting to process user query: {truncate('Test biomedical query')}"),
+    full_query = f"Test biomedical query{base_prompt}"
+    expected_calls = [
         call(f"Full query: {truncate(full_query)}"),
         call("Attempt 1: Executing query..."),
         call(f"Starting sequential chain for query: {truncate(full_query)}"),
         call(f"Attempting to execute AQL query: {truncate(full_query)}"),
         call("AQL query execution output: {'result': 'mocked AQL result'}"),
         call("Extracting AQL result from captured output"),
-    ], any_order=True)
+        call("No AQL result found in captured output"),
+        call("Attempt - No AQL result found."),
+        call("Sequential chain completed. Final response: {'aql_result': []}"),
+        call("Attempt 1 - AQL Result: []"),
+        call("Attempt 1 - No AQL result found."),
+    ]
+    query_manager.logger.debug.assert_has_calls(expected_calls, any_order=True)
 
 def test_process_query_no_result(query_manager):
     query_manager.qa_chain.invoke.return_value = {"result": ""}
@@ -57,19 +63,39 @@ def test_process_query_no_result(query_manager):
     result = query_manager.process_query("Invalid biomedical query")
 
     assert result["aql_result"] == []
-    assert result["interpretation"] == truncate("No interpretation available.")
+    assert result["interpretation"] == "No interpretation available."
     assert result["attempt_count"] == 3  # Max attempts
 
-    full_query = "Invalid biomedical query\n    <System Instructions>Answer the above question using the following data model and query format...</System Instructions>"
-    query_manager.logger.debug.assert_has_calls([
-        call(f"Starting to process user query: {truncate('Invalid biomedical query')}"),
+    full_query = f"Invalid biomedical query{base_prompt}"
+    failure_message = "The prior AQL query failed to return results. Please think this through step by step and refine your AQL statement. The original question is as follows:"
+
+    expected_calls = [
         call(f"Full query: {truncate(full_query)}"),
         call("Attempt 1: Executing query..."),
         call(f"Starting sequential chain for query: {truncate(full_query)}"),
         call(f"Attempting to execute AQL query: {truncate(full_query)}"),
-        call("AQL query execution output: {'result': ''}"),
-        call("No AQL result found in captured output"),
-    ], any_order=True)
+        call("Attempt - No AQL result found."),
+        call("Sequential chain completed. Final response: {'aql_result': []}"),
+        call("Attempt 1 - AQL Result: []"),
+        call("Attempt 1 - No AQL result found."),
+        call(f"Refined query for next attempt: {truncate(failure_message + ' ' + full_query)}"),
+        call("Attempt 2: Executing query..."),
+        call(f"Starting sequential chain for query: {truncate(failure_message + ' ' + full_query)}"),
+        call(f"Attempting to execute AQL query: {truncate(failure_message + ' ' + full_query)}"),
+        call("Attempt - No AQL result found."),
+        call("Sequential chain completed. Final response: {'aql_result': []}"),
+        call("Attempt 2 - AQL Result: []"),
+        call("Attempt 2 - No AQL result found."),
+        call(f"Refined query for next attempt: {truncate(failure_message + ' ' + failure_message + ' ' + full_query)}"),
+        call("Attempt 3: Executing query..."),
+        call(f"Starting sequential chain for query: {truncate(failure_message + ' ' + failure_message + ' ' + full_query)}"),
+        call(f"Attempting to execute AQL query: {truncate(failure_message + ' ' + failure_message + ' ' + full_query)}"),
+        call("Attempt - No AQL result found."),
+        call("Sequential chain completed. Final response: {'aql_result': []}"),
+        call("Attempt 3 - AQL Result: []"),
+        call("Attempt 3 - No AQL result found."),
+    ]
+    query_manager.logger.debug.assert_has_calls(expected_calls, any_order=True)
 
 def test_error_handling(query_manager):
     query_manager.qa_chain.invoke.side_effect = Exception("Test error")
