@@ -1,6 +1,6 @@
 import unittest
-from unittest.mock import patch, MagicMock
-from omics_oracle.gradio_interface import create_styled_interface, process_query, custom_css
+from unittest.mock import patch, MagicMock, call
+from omics_oracle.gradio_interface import create_styled_interface, process_query, custom_css, format_response
 from omics_oracle.query_manager import QueryManager
 import logging
 
@@ -65,17 +65,40 @@ class TestGradioInterface(unittest.TestCase):
     @patch('omics_oracle.gradio_interface.logger')
     def test_process_query(self, mock_logger):
         mock_query_manager = MagicMock(spec=QueryManager)
-        mock_query_manager.process_query.return_value = "Processed query result"
+        mock_query_manager.process_query.return_value = {
+            "original_query": "Test query",
+            "aql_query": "FOR doc IN collection RETURN doc",
+            "spoke_results": [{"result": "data"}],
+            "interpretation": "Test interpretation"
+        }
 
         result = process_query("Test query", mock_query_manager)
         
-        self.assertEqual(result, "Processed query result")
+        expected_result = format_response(mock_query_manager.process_query.return_value)
+        self.assertEqual(result, expected_result)
 
-        # Check if the debug log message was called
-        mock_logger.debug.assert_called_once_with("Processing query: Test query")
+        # Check if both debug log messages were called in the correct order
+        expected_calls = [
+            call("Processing query: Test query"),
+            call(f"Query processed successfully. Response: {mock_query_manager.process_query.return_value}")
+        ]
+        mock_logger.debug.assert_has_calls(expected_calls, any_order=False)
 
         # Check if the query_manager's process_query method was called
         mock_query_manager.process_query.assert_called_once_with("Test query")
+
+    def test_format_response(self):
+        test_response = {
+            "original_query": "Test query",
+            "aql_query": "FOR doc IN collection RETURN doc",
+            "spoke_results": [{"result": "data"}],
+            "interpretation": "Test interpretation"
+        }
+        formatted = format_response(test_response)
+        self.assertIn("Original Query: Test query", formatted)
+        self.assertIn("AQL Query: FOR doc IN collection RETURN doc", formatted)
+        self.assertIn("SPOKE Results: [\n  {\n    \"result\": \"data\"\n  }\n]", formatted)
+        self.assertIn("Interpretation: Test interpretation", formatted)
 
 if __name__ == '__main__':
     unittest.main()

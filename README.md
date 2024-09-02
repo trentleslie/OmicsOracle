@@ -1,6 +1,6 @@
 # OmicsOracle
 
-OmicsOracle is a Python package that integrates the Gemini API, SPOKE knowledge graph (using ArangoDB), and a Gradio interface to create a user-friendly system for querying and analyzing biomedical data.
+OmicsOracle is a Python package that integrates the Gemini API, OpenAI's GPT-4o model, SPOKE knowledge graph (using ArangoDB), and a Gradio interface to create a user-friendly system for querying and analyzing biomedical data.
 
 ## Installation
 
@@ -28,6 +28,7 @@ ARANGO_HOST=your_arango_host
 ARANGO_DB=your_arango_database_name
 ARANGO_USERNAME=your_arango_username
 ARANGO_PASSWORD=your_arango_password
+OPENAI_API_KEY=your_openai_api_key
 ```
 
 Make sure to replace the placeholder values with your actual API keys and connection details.
@@ -48,7 +49,7 @@ To use OmicsOracle, follow these steps:
    python run_gradio_interface.py
    ```
 
-This will launch a web interface where you can enter your biomedical queries. The interface will be accessible in your web browser, typically at `http://localhost:7860` unless specified otherwise.
+This will launch a web interface where you can enter your biomedical queries. The interface will be accessible in your web browser, typically at `http://localhost:7861` unless specified otherwise.
 
 ## Development
 
@@ -58,17 +59,23 @@ To contribute to OmicsOracle, please follow these steps:
 2. Create a new branch for your feature
 3. Implement your changes
 4. Write tests for your new feature
-5. Run the test suite to ensure all tests pass
+5. Run the test suite to ensure all tests pass:
+   ```bash
+   python -m pytest tests/ -v
+   ```
 6. Submit a pull request
 
 ## Recent Changes
 
+- Added OpenAIWrapper to integrate OpenAI's GPT-4o model
 - Updated both GeminiWrapper and SpokeWrapper to load configuration from environment variables
-- Improved error handling and logging in both wrappers
+- Improved error handling and logging in all wrappers
 - SpokeWrapper continues to use pyArango for interacting with the ArangoDB-based SPOKE database
-- Updated the initialization process for both wrappers to use environment variables
+- Updated the initialization process for wrappers to use environment variables
 - Integrated Gradio interface for a user-friendly query system
 - Added run_gradio_interface.py for easy launching of the Gradio interface
+- Improved test suite with mock implementations for better isolation
+- Updated OpenAIWrapper to allow for dependency injection of base prompts, improving testability
 
 ## License
 

@@ -2,6 +2,7 @@ import gradio as gr
 from omics_oracle.query_manager import QueryManager
 import logging
 import traceback
+import json
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG, filename='error.log')
@@ -21,10 +22,28 @@ def process_query(query: str, query_manager: QueryManager) -> str:
     logger.debug(f"Processing query: {query}")
     try:
         response = query_manager.process_query(query)
-        return response
+        logger.debug(f"Query processed successfully. Response: {response}")
+        formatted_response = format_response(response)
+        return formatted_response
     except Exception as e:
         logger.error(f"Error processing query: {e}\n\n{traceback.format_exc()}")
         return f"An error occurred while processing your query: {str(e)}\n\n{traceback.format_exc()}"
+
+def format_response(response: dict) -> str:
+    """
+    Format the response from QueryManager into a readable string.
+
+    Args:
+        response (dict): The response dictionary from QueryManager.
+
+    Returns:
+        str: A formatted string representation of the response.
+    """
+    formatted = f"Original Query: {response['original_query']}\n\n"
+    formatted += f"AQL Query: {response['aql_query']}\n\n"
+    formatted += f"SPOKE Results: {json.dumps(response['spoke_results'], indent=2)}\n\n"
+    formatted += f"Interpretation: {response['interpretation']}"
+    return formatted
 
 custom_css = """
 body {
@@ -113,13 +132,12 @@ def create_styled_interface(query_manager: QueryManager) -> gr.Interface:
             
             query_input = gr.Textbox(
                 lines=5,
-                placeholder="Enter your biomedical query here...",
-                label="Query"
+                label="Enter your biomedical query here..."
             )
             
             submit_button = gr.Button("Submit Query")
 
-            response_output = gr.Textbox(label="Response", lines=10)
+            response_output = gr.Textbox(label="Response", lines=15)
             
             gr.Markdown("Enter a biomedical query, and the system will provide an answer based on the available data.")
             
@@ -130,8 +148,7 @@ def create_styled_interface(query_manager: QueryManager) -> gr.Interface:
 
 if __name__ == "__main__":
     # This is just for testing purposes. In production, use run_gradio_interface.py
-    from omics_oracle.gemini_wrapper import GeminiWrapper
     from omics_oracle.spoke_wrapper import SpokeWrapper
-    test_query_manager = QueryManager(GeminiWrapper(), SpokeWrapper())
+    test_query_manager = QueryManager(SpokeWrapper())
     demo = create_styled_interface(test_query_manager)
     demo.launch()

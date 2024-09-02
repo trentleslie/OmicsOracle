@@ -1,49 +1,45 @@
 import pytest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from omics_oracle.query_manager import QueryManager
 
 @pytest.fixture
 def query_manager():
-    mock_gemini_wrapper = Mock()
     mock_spoke_wrapper = Mock()
-    return QueryManager(gemini_wrapper=mock_gemini_wrapper, spoke_wrapper=mock_spoke_wrapper)
+    return QueryManager(spoke_wrapper=mock_spoke_wrapper)
 
 def test_process_query(query_manager):
-    # Mock the GeminiWrapper and SpokeWrapper responses
-    query_manager.gemini.send_query.return_value = {"choices": [{"message": {"content": "Interpreted query"}}]}
-    query_manager.gemini.interpret_response.side_effect = ["AQL: FOR doc IN collection RETURN doc", "Final interpretation"]
+    # Mock the SpokeWrapper response
     query_manager.spoke.execute_aql.return_value = [{"result": "data"}]
 
     result = query_manager.process_query("Test biomedical query")
 
     assert result["original_query"] == "Test biomedical query"
-    assert result["gemini_interpretation"] == "AQL: FOR doc IN collection RETURN doc"
-    assert result["aql_query"] == "FOR doc IN collection RETURN doc"
+    assert "aql_query" in result
     assert result["spoke_results"] == [{"result": "data"}]
-    assert result["final_interpretation"] == "Final interpretation"
+    assert "interpretation" in result
 
 def test_process_query_no_aql(query_manager):
     # Test the scenario where no AQL query is generated
-    query_manager.gemini.send_query.return_value = {"choices": [{"message": {"content": "No AQL generated"}}]}
-    query_manager.gemini.interpret_response.return_value = "No AQL found"
+    with patch.object(QueryManager, 'convert_to_aql', return_value=""):
+        result = query_manager.process_query("Invalid biomedical query")
 
-    result = query_manager.process_query("Invalid biomedical query")
-
-    assert result["aql_query"] == ""
-    assert result["spoke_results"] == []
+        assert result["aql_query"] == ""
+        assert result["spoke_results"] == []
 
 def test_error_handling(query_manager):
     # Test error handling in the process_query method
-    query_manager.gemini.send_query.side_effect = Exception("API Error")
+    with patch.object(QueryManager, 'convert_to_aql', side_effect=Exception("Conversion Error")):
+        with pytest.raises(Exception):
+            query_manager.process_query("Test query")
 
-    with pytest.raises(Exception):
-        query_manager.process_query("Test query")
+def test_convert_to_aql(query_manager):
+    aql_query = query_manager.convert_to_aql("Test biomedical query")
+    assert isinstance(aql_query, str)
+    assert len(aql_query) > 0
 
-def test_extract_aql_from_response(query_manager):
-    aql_query = query_manager.extract_aql_from_response("Some text AQL: FOR doc IN collection RETURN doc")
-    assert aql_query == "FOR doc IN collection RETURN doc"
-
-    no_aql = query_manager.extract_aql_from_response("No AQL in this response")
-    assert no_aql == ""
+def test_interpret_results(query_manager):
+    interpretation = query_manager.interpret_results([{"result": "data"}], "Test query")
+    assert isinstance(interpretation, str)
+    assert "Found 1 results" in interpretation
 
 # Add more tests as needed to cover edge cases and error scenarios
