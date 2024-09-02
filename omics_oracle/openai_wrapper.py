@@ -2,14 +2,15 @@ import os
 import logging
 from dotenv import load_dotenv
 from openai import OpenAI
-from ..prompts import base_prompt
+from omics_oracle.prompts import base_prompt as default_base_prompt
 
 class OpenAIWrapper:
-    def __init__(self):
+    def __init__(self, base_prompt=default_base_prompt):
         self.logger = logging.getLogger(__name__)
         self._load_environment()
         self.client = OpenAI(api_key=self.api_key)
-        self.model = "gpt-4"  # Changed to gpt-4 as gpt-4o is not a standard model name
+        self.model = "gpt-4o"
+        self.base_prompt = base_prompt
 
     def _load_environment(self):
         """Load environment variables from .env file."""
@@ -34,7 +35,7 @@ class OpenAIWrapper:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": base_prompt},
+                    {"role": "system", "content": self.base_prompt},
                     {"role": "user", "content": query}
                 ]
             )
