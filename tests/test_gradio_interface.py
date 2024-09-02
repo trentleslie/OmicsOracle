@@ -87,5 +87,11 @@ class TestGradioInterface(unittest.TestCase):
         self.assertIn("SPOKE Results: [\n  {\n    \"result\": \"data\"\n  }\n]", formatted)
         self.assertIn("Interpretation: Test interpretation", formatted)
 
+    @unittest.skip("Skipping submit button test as it is better suited for integration testing.")
+    @patch('omics_oracle.gradio_interface.logger')
+    @patch('omics_oracle.gradio_interface.process_query')
+    def test_submit_button_debugging(self, mock_process_query, mock_logger):
+        pass
+
 if __name__ == '__main__':
     unittest.main()

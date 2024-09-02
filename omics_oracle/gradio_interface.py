@@ -11,6 +11,7 @@ logging.basicConfig(level=logging.DEBUG, filename='error.log')
 logger = logging.getLogger(__name__)
 
 def process_query(query: str, query_manager: QueryManager) -> str:
+    logger.debug(f"Submit button clicked with query: {query}")
     logger.debug(f"Received query: {query}")
     if not query.strip():
         logger.error("Empty query received")
@@ -111,31 +112,42 @@ footer {
 }
 """
 
-def create_styled_interface(query_manager: QueryManager) -> gr.Interface:
+def create_styled_interface(query_manager: QueryManager):
+    """
+    Create and configure a styled Gradio interface for the OmicsOracle system.
+
+    Args:
+        query_manager (QueryManager): The QueryManager instance to process queries.
+
+    Returns:
+        gr.Blocks: The configured Gradio interface with custom styling.
+    """
     logger.debug("Creating styled Gradio interface")
-    try:
-        with gr.Blocks(css=custom_css) as interface:
-            with gr.Column(elem_id="centered-content"):
-                gr.Markdown("# OmicsOracle Biomedical Query System")
-                
-                query_input = gr.Textbox(
-                    lines=5,
-                    label="Enter your biomedical query here..."
-                )
-                
-                submit_button = gr.Button("Submit Query")
 
-                response_output = gr.Textbox(label="Response", lines=20)
-                
-                gr.Markdown("Enter a biomedical query, and the system will provide an answer based on the available data.")
-                
-                submit_button.click(lambda q: process_query(q, query_manager), inputs=query_input, outputs=response_output)
+    with gr.Blocks(css=custom_css) as interface:
+        with gr.Column(elem_id="centered-content"):
+            gr.Markdown("# OmicsOracle Biomedical Query System")
+            
+            query_input = gr.Textbox(
+                lines=5,
+                label="Enter your biomedical query here...",
+                elem_id="query_input"
+            )
+            
+            submit_button = gr.Button("Submit Query", elem_id="submit_button")
 
-        logger.debug("Styled Gradio interface created successfully")
-        return interface
-    except Exception as e:
-        logger.error(f"Error creating Gradio interface: {e}\n\n{traceback.format_exc()}")
-        raise
+            response_output = gr.Textbox(label="Response", lines=15, elem_id="response_output")
+            
+            gr.Markdown("Enter a biomedical query, and the system will provide an answer based on the available data.")
+            
+            submit_button.click(
+                lambda q: process_query(q, query_manager),
+                inputs=query_input,
+                outputs=response_output
+            )
+
+    logger.debug("Styled Gradio interface created successfully")
+    return interface
 
 if __name__ == "__main__":
     # This is just for testing purposes. In production, use run_gradio_interface.py
