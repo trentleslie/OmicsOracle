@@ -11,16 +11,6 @@ logging.basicConfig(level=logging.DEBUG, filename='error.log')
 logger = logging.getLogger(__name__)
 
 def process_query(query: str, query_manager: QueryManager) -> str:
-    """
-    Process the user query using the QueryManager.
-
-    Args:
-        query (str): The user's input query.
-        query_manager (QueryManager): The QueryManager instance to process the query.
-
-    Returns:
-        str: The response to the user's query.
-    """
     logger.debug(f"Received query: {query}")
     if not query.strip():
         logger.error("Empty query received")
@@ -35,28 +25,21 @@ def process_query(query: str, query_manager: QueryManager) -> str:
         logger.debug(f"Formatted response: {formatted_response}")
         return formatted_response
     except ValueError as ve:
-        logger.error(f"ValueError while processing query: {ve}")
+        logger.error(f"ValueError while processing query: {ve}\n\n{traceback.format_exc()}")
         return f"An error occurred: {str(ve)}"
     except Exception as e:
         logger.error(f"Exception while processing query: {e}\n\n{traceback.format_exc()}")
         return f"An unexpected error occurred. Please try again later. If the problem persists, contact support. Details: {str(e)}"
 
 def format_response(response: dict) -> str:
-    """
-    Format the response from QueryManager into a readable string.
-
-    Args:
-        response (dict): The response dictionary from QueryManager.
-
-    Returns:
-        str: A formatted string representation of the response.
-    """
+    logger.debug(f"Formatting response: {response}")
     formatted = f"Original Query: {response['original_query']}\n\n"
     formatted += f"AQL Query: {response.get('aql_query', 'No AQL query generated')}\n\n"
     formatted += f"SPOKE Results: {json.dumps(response.get('spoke_results', []), indent=2)}\n\n"
     formatted += f"Interpretation: {response['interpretation']}\n\n"
     if 'attempt_count' in response:
         formatted += f"Attempt Count: {response['attempt_count']}"
+    logger.debug(f"Formatted response: {formatted}")
     return formatted
 
 custom_css = """
@@ -129,41 +112,39 @@ footer {
 """
 
 def create_styled_interface(query_manager: QueryManager) -> gr.Interface:
-    """
-    Create and configure a styled Gradio interface for the OmicsOracle system.
-
-    Args:
-        query_manager (QueryManager): The QueryManager instance to process queries.
-
-    Returns:
-        gr.Interface: The configured Gradio interface with custom styling.
-    """
     logger.debug("Creating styled Gradio interface")
+    try:
+        with gr.Blocks(css=custom_css) as interface:
+            with gr.Column(elem_id="centered-content"):
+                gr.Markdown("# OmicsOracle Biomedical Query System")
+                
+                query_input = gr.Textbox(
+                    lines=5,
+                    label="Enter your biomedical query here..."
+                )
+                
+                submit_button = gr.Button("Submit Query")
 
-    with gr.Blocks(css=custom_css) as interface:
-        with gr.Column(elem_id="centered-content"):
-            gr.Markdown("# OmicsOracle Biomedical Query System")
-            
-            query_input = gr.Textbox(
-                lines=5,
-                label="Enter your biomedical query here..."
-            )
-            
-            submit_button = gr.Button("Submit Query")
+                response_output = gr.Textbox(label="Response", lines=20)
+                
+                gr.Markdown("Enter a biomedical query, and the system will provide an answer based on the available data.")
+                
+                submit_button.click(lambda q: process_query(q, query_manager), inputs=query_input, outputs=response_output)
 
-            response_output = gr.Textbox(label="Response", lines=20)
-            
-            gr.Markdown("Enter a biomedical query, and the system will provide an answer based on the available data.")
-            
-            submit_button.click(lambda q: process_query(q, query_manager), inputs=query_input, outputs=response_output)
-
-    logger.debug("Styled Gradio interface created successfully")
-    return interface
+        logger.debug("Styled Gradio interface created successfully")
+        return interface
+    except Exception as e:
+        logger.error(f"Error creating Gradio interface: {e}\n\n{traceback.format_exc()}")
+        raise
 
 if __name__ == "__main__":
     # This is just for testing purposes. In production, use run_gradio_interface.py
-    openai_wrapper = OpenAIWrapper()
-    spoke_wrapper = SpokeWrapper()
-    test_query_manager = QueryManager(spoke_wrapper, openai_wrapper)
-    demo = create_styled_interface(test_query_manager)
-    demo.launch()
+    try:
+        openai_wrapper = OpenAIWrapper()
+        spoke_wrapper = SpokeWrapper()
+        test_query_manager = QueryManager(spoke_wrapper, openai_wrapper)
+        demo = create_styled_interface(test_query_manager)
+        demo.launch(debug=True)
+    except Exception as e:
+        logger.error(f"Error in main execution: {e}\n\n{traceback.format_exc()}")
+        raise
