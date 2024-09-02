@@ -21,21 +21,24 @@ def process_query(query: str, query_manager: QueryManager) -> str:
     Returns:
         str: The response to the user's query.
     """
-    logger.debug(f"Processing query: {query}")
+    logger.debug(f"Received query: {query}")
     if not query.strip():
         logger.error("Empty query received")
         return "Error: Query cannot be empty. Please enter a valid query."
     
     try:
+        logger.debug("Starting to process the query with QueryManager...")
         response = query_manager.process_query(query)
-        logger.debug(f"Query processed successfully. Response: {response}")
+        logger.debug(f"QueryManager returned response: {response}")
+
         formatted_response = format_response(response)
+        logger.debug(f"Formatted response: {formatted_response}")
         return formatted_response
     except ValueError as ve:
-        logger.error(f"Value error while processing query: {ve}")
+        logger.error(f"ValueError while processing query: {ve}")
         return f"An error occurred: {str(ve)}"
     except Exception as e:
-        logger.error(f"Unexpected error while processing query: {e}\n\n{traceback.format_exc()}")
+        logger.error(f"Exception while processing query: {e}\n\n{traceback.format_exc()}")
         return f"An unexpected error occurred. Please try again later. If the problem persists, contact support. Details: {str(e)}"
 
 def format_response(response: dict) -> str:

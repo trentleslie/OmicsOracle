@@ -11,6 +11,7 @@ class OpenAIWrapper:
         self.client = OpenAI(api_key=self.api_key)
         self.model = "gpt-4o"
         self.base_prompt = base_prompt
+        self.logger.info("OpenAIWrapper initialized successfully")
 
     def _load_environment(self):
         """Load environment variables from .env file."""
@@ -27,10 +28,14 @@ class OpenAIWrapper:
         self.api_key = os.getenv('OPENAI_API_KEY')
 
         if not self.api_key:
+            self.logger.error("OPENAI_API_KEY not found in .env file")
             raise ValueError("OPENAI_API_KEY must be set in the .env file")
+        else:
+            self.logger.info("OPENAI_API_KEY loaded successfully")
 
     def send_query(self, query: str) -> str:
         """Send a query to the OpenAI API and return the response."""
+        self.logger.debug(f"Sending query to OpenAI: {query}")
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -39,6 +44,7 @@ class OpenAIWrapper:
                     {"role": "user", "content": query}
                 ]
             )
+            self.logger.debug(f"OpenAI response received: {response.choices[0].message.content}")
             return response.choices[0].message.content
         except Exception as e:
             self.logger.error(f"Error in OpenAI API call: {str(e)}")
@@ -46,4 +52,7 @@ class OpenAIWrapper:
 
     def generate_aql(self, query: str) -> str:
         """Generate an AQL query based on the natural language query."""
-        return self.send_query(query)
+        self.logger.debug(f"Generating AQL for query: {query}")
+        aql = self.send_query(query)
+        self.logger.debug(f"Generated AQL: {aql}")
+        return aql

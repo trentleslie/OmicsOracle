@@ -68,7 +68,9 @@ class QueryManager:
 
     def execute_aql(self, query: str) -> Dict[str, str]:
         try:
+            self.logger.debug(f"Executing AQL query: {query}")
             captured_output = self.capture_stdout(self.qa_chain.invoke, {self.qa_chain.input_key: query})
+            self.logger.debug(f"AQL query execution completed. Captured output: {captured_output}")
             return {'captured_output': captured_output}
         except Exception as e:
             self.logger.error(f"Error executing AQL query: {e}")
@@ -84,6 +86,7 @@ class QueryManager:
         return fixed_json
 
     def extract_aql_result(self, captured_output: str) -> Dict[str, list]:
+        self.logger.debug("Extracting AQL result from captured output")
         cleaned_output = self.clean_output(captured_output)
         lines = cleaned_output.splitlines()
         aql_result_line = None
@@ -97,12 +100,16 @@ class QueryManager:
             try:
                 fixed_json = self.fix_json_format(aql_result_line)
                 aql_result = json.loads(fixed_json)
+                self.logger.debug(f"Extracted AQL result: {aql_result}")
                 return {'aql_result': aql_result}
             except json.JSONDecodeError:
                 self.logger.error("Failed to parse AQL result JSON")
+        else:
+            self.logger.warning("No AQL result found in captured output")
         return {'aql_result': []}
 
     def interpret_aql_result(self, aql_result: List[Dict[str, Any]]) -> str:
+        self.logger.debug("Interpreting AQL result")
         prompt = (
             "Based on the following AQL results, provide a detailed and comprehensive scientific story "
             "that explains the associations between the genes and pathways:\n\n"
@@ -110,14 +117,17 @@ class QueryManager:
         )
         try:
             response = self.llm.invoke(prompt)
+            self.logger.debug(f"LLM interpretation: {response.content}")
             return response.content
         except Exception as e:
             self.logger.error(f"Error interpreting AQL result: {e}")
             return "Error interpreting results."
 
     def sequential_chain(self, query: str) -> Dict[str, Any]:
+        self.logger.debug(f"Starting sequential chain for query: {query}")
         response = self.execute_aql(query)
         if 'error' in response:
+            self.logger.error(f"Error in sequential chain: {response['error']}")
             return {'error': response['error']}
         
         captured_output = response['captured_output']
@@ -125,9 +135,13 @@ class QueryManager:
         
         aql_result = final_response.get('aql_result', [])
         if aql_result:
+            self.logger.debug("AQL result found, interpreting...")
             scientific_story = self.interpret_aql_result(aql_result)
             final_response['scientific_story'] = scientific_story
+        else:
+            self.logger.warning("No AQL result found in sequential chain")
 
+        self.logger.debug(f"Sequential chain completed. Final response: {final_response}")
         return final_response
 
     def process_query(self, user_query: str) -> Dict[str, Any]:
@@ -141,8 +155,8 @@ class QueryManager:
             Dict[str, Any]: A dictionary containing the processed results.
         """
         self.logger.info(f"Processing user query: {user_query}")
-        
         full_query = user_query + base_prompt
+        self.logger.debug(f"Full query with base prompt: {full_query}")
 
         max_attempts = 3
         attempt = 1
@@ -169,17 +183,20 @@ class QueryManager:
                 self.logger.debug(f"Attempt {attempt} - AQL Result: No result found.")
                 if attempt < max_attempts:
                     full_query = f"{failure_message} {full_query}"
+                    self.logger.debug(f"Refined query for next attempt: {full_query}")
                 else:
                     self.logger.warning(f"No result found after {max_attempts} tries.")
 
             attempt += 1
 
-        return {
+        final_response = {
             "original_query": user_query,
             "aql_result": aql_result,
             "interpretation": response.get('scientific_story', "No interpretation available."),
             "attempt_count": attempt - 1
         }
+        self.logger.info(f"Query processing completed. Final response: {final_response}")
+        return final_response
 
 # Example usage (for testing purposes)
 if __name__ == "__main__":

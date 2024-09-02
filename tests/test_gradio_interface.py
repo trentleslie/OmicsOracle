@@ -77,10 +77,12 @@ class TestGradioInterface(unittest.TestCase):
         expected_result = format_response(mock_query_manager.process_query.return_value)
         self.assertEqual(result, expected_result)
 
-        # Check if both debug log messages were called in the correct order
+        # Updated expected log messages to match the new logging calls
         expected_calls = [
-            call("Processing query: Test query"),
-            call(f"Query processed successfully. Response: {mock_query_manager.process_query.return_value}")
+            call("Received query: Test query"),
+            call("Starting to process the query with QueryManager..."),
+            call(f"QueryManager returned response: {mock_query_manager.process_query.return_value}"),
+            call(f"Formatted response: {expected_result}")
         ]
         mock_logger.debug.assert_has_calls(expected_calls, any_order=False)
 
@@ -111,8 +113,8 @@ class TestGradioInterface(unittest.TestCase):
         expected_result = "An error occurred: Invalid query format"
         self.assertEqual(result, expected_result)
 
-        # Check if the error log message was called
-        mock_logger.error.assert_called_once_with("Value error while processing query: Invalid query format")
+        # Updated the expected log message to match the new log format
+        mock_logger.error.assert_called_once_with("ValueError while processing query: Invalid query format")
 
     @patch('omics_oracle.gradio_interface.logger')
     def test_process_query_unexpected_error(self, mock_logger):
@@ -123,9 +125,9 @@ class TestGradioInterface(unittest.TestCase):
         
         self.assertTrue(result.startswith("An unexpected error occurred. Please try again later. If the problem persists, contact support. Details: Unexpected error"))
 
-        # Check if the error log message was called
+        # Updated expected log message to match the new error log format
         mock_logger.error.assert_called_once()
-        self.assertIn("Unexpected error while processing query: Unexpected error", mock_logger.error.call_args[0][0])
+        self.assertIn("Exception while processing query: Unexpected error", mock_logger.error.call_args[0][0])
 
     def test_format_response(self):
         test_response = {

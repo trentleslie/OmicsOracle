@@ -28,17 +28,34 @@ def main():
     """
     logger.info("Initializing OmicsOracle biomedical query system...")
 
-    # Load environment variables
-    load_dotenv()
+    try:
+        load_dotenv()
+        logger.info("Environment variables loaded successfully.")
+    except Exception as e:
+        logger.error(f"Failed to load environment variables: {e}")
+        sys.exit(1)
 
-    # Initialize wrappers
-    spoke_wrapper = SpokeWrapper()
-    openai_wrapper = OpenAIWrapper()
+    try:
+        spoke_wrapper = SpokeWrapper()
+        logger.info("SpokeWrapper initialized successfully.")
+    except Exception as e:
+        logger.error(f"Failed to initialize SpokeWrapper: {e}")
+        sys.exit(1)
 
-    # Initialize the query manager
-    query_manager = QueryManager(spoke_wrapper, openai_wrapper)
+    try:
+        openai_wrapper = OpenAIWrapper()
+        logger.info("OpenAIWrapper initialized successfully.")
+    except Exception as e:
+        logger.error(f"Failed to initialize OpenAIWrapper: {e}")
+        sys.exit(1)
 
-    # Create and launch the Gradio interface
+    try:
+        query_manager = QueryManager(spoke_wrapper, openai_wrapper)
+        logger.info("QueryManager initialized successfully.")
+    except Exception as e:
+        logger.error(f"Failed to initialize QueryManager: {e}")
+        sys.exit(1)
+
     logger.info("Creating Gradio interface...")
     interface = create_styled_interface(query_manager)
     
@@ -50,7 +67,7 @@ def main():
         interface.close()
         sys.exit(0)
     except Exception as e:
-        logger.error(f"An error occurred: {str(e)}")
+        logger.error(f"An error occurred while launching the Gradio interface: {e}")
         sys.exit(1)
 
 if __name__ == '__main__':

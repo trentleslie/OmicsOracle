@@ -11,6 +11,7 @@ class SpokeWrapper:
         self.logger = logging.getLogger(__name__)
         self._load_environment()
         self._connect_to_database()
+        self.logger.info("SpokeWrapper initialized successfully")
 
     def _load_environment(self):
         """Load environment variables from .env file."""
@@ -30,7 +31,10 @@ class SpokeWrapper:
         self.password = os.getenv('ARANGO_PASSWORD')
 
         if not all([self.host, self.db_name, self.username, self.password]):
+            self.logger.error("Missing required environment variables")
             raise ValueError("ARANGO_HOST, ARANGO_DB, ARANGO_USERNAME, and ARANGO_PASSWORD must be set in the .env file")
+        else:
+            self.logger.info("All required environment variables loaded successfully")
 
     def _connect_to_database(self):
         """Connect to the ArangoDB database."""
@@ -49,7 +53,9 @@ class SpokeWrapper:
         Returns:
             List[str]: A list of collection names.
         """
-        return list(self.db.collections.keys())
+        collections = list(self.db.collections.keys())
+        self.logger.debug(f"Retrieved {len(collections)} collections")
+        return collections
 
     def execute_aql(self, query: str, bind_vars: Dict[str, Any] = None) -> List[Dict[str, Any]]:
         """
@@ -62,11 +68,12 @@ class SpokeWrapper:
         Returns:
             List[Dict[str, Any]]: The query results as a list of dictionaries.
         """
+        self.logger.info(f"Executing AQL query: {query}")
+        self.logger.debug(f"Bind variables: {bind_vars}")
         try:
-            self.logger.info("Executing AQL query")
-            self.logger.debug(f"AQL query: {query}")
             results = list(self.db.AQLQuery(query, bindVars=bind_vars, rawResults=True))
             self.logger.info(f"AQL query executed successfully. Retrieved {len(results)} results.")
+            self.logger.debug(f"Query results: {results}")
             return results
         except Exception as e:
             self.logger.error(f"Error executing AQL query: {e}")
@@ -83,9 +90,11 @@ class SpokeWrapper:
         Returns:
             Dict[str, Any]: The entity data as a dictionary, or None if not found.
         """
+        self.logger.info(f"Retrieving entity from collection: {collection}, key: {key}")
         try:
             entity = self.db[collection][key]
             self.logger.info(f"Successfully retrieved entity from collection: {collection}")
+            self.logger.debug(f"Retrieved entity: {entity}")
             return entity
         except Exception as e:
             self.logger.error(f"Failed to retrieve entity: {e}")
@@ -102,6 +111,7 @@ class SpokeWrapper:
         Returns:
             List[Dict[str, Any]]: A list of connected entities.
         """
+        self.logger.info(f"Getting connected entities for start_id: {start_id}, edge_label: {edge_label}")
         query = """
         FOR v, e IN 1..1 OUTBOUND @start_id @@edge_collection
         FILTER e.label == @edge_label
@@ -126,6 +136,7 @@ class SpokeWrapper:
         Returns:
             List[Dict[str, Any]]: A list of traversed paths.
         """
+        self.logger.info(f"Traversing graph from start_id: {start_id}, max_depth: {max_depth}, edge_label: {edge_label}")
         query = """
         FOR v, e, p IN 1..@max_depth OUTBOUND @start_id @@edge_collection
         FILTER @edge_label == null OR e.label == @edge_label
