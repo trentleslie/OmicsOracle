@@ -76,6 +76,20 @@ To contribute to OmicsOracle, please follow these steps:
 - Added run_gradio_interface.py for easy launching of the Gradio interface
 - Improved test suite with mock implementations for better isolation
 - Updated OpenAIWrapper to allow for dependency injection of base prompts, improving testability
+- Fixed import statement for ArangoGraph to use the new path from langchain_community.graphs
+- Updated QueryManager to handle cases where 'attempt_count' is not present in the response
+- Improved test coverage for QueryManager and GradioInterface
+- Resolved issues with mock objects in test suite, ensuring all tests pass successfully
+
+## Testing
+
+To run the test suite, use the following command from the project root directory:
+
+```bash
+python -m pytest tests/ -v
+```
+
+This will run all tests and display detailed output. Make sure all tests pass before submitting a pull request.
 
 ## License
 

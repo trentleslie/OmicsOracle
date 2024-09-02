@@ -1,5 +1,7 @@
 import gradio as gr
 from omics_oracle.query_manager import QueryManager
+from omics_oracle.openai_wrapper import OpenAIWrapper
+from omics_oracle.spoke_wrapper import SpokeWrapper
 import logging
 import traceback
 import json
@@ -20,14 +22,21 @@ def process_query(query: str, query_manager: QueryManager) -> str:
         str: The response to the user's query.
     """
     logger.debug(f"Processing query: {query}")
+    if not query.strip():
+        logger.error("Empty query received")
+        return "Error: Query cannot be empty. Please enter a valid query."
+    
     try:
         response = query_manager.process_query(query)
         logger.debug(f"Query processed successfully. Response: {response}")
         formatted_response = format_response(response)
         return formatted_response
+    except ValueError as ve:
+        logger.error(f"Value error while processing query: {ve}")
+        return f"An error occurred: {str(ve)}"
     except Exception as e:
-        logger.error(f"Error processing query: {e}\n\n{traceback.format_exc()}")
-        return f"An error occurred while processing your query: {str(e)}\n\n{traceback.format_exc()}"
+        logger.error(f"Unexpected error while processing query: {e}\n\n{traceback.format_exc()}")
+        return f"An unexpected error occurred. Please try again later. If the problem persists, contact support. Details: {str(e)}"
 
 def format_response(response: dict) -> str:
     """
@@ -40,9 +49,11 @@ def format_response(response: dict) -> str:
         str: A formatted string representation of the response.
     """
     formatted = f"Original Query: {response['original_query']}\n\n"
-    formatted += f"AQL Query: {response['aql_query']}\n\n"
-    formatted += f"SPOKE Results: {json.dumps(response['spoke_results'], indent=2)}\n\n"
-    formatted += f"Interpretation: {response['interpretation']}"
+    formatted += f"AQL Query: {response.get('aql_query', 'No AQL query generated')}\n\n"
+    formatted += f"SPOKE Results: {json.dumps(response.get('spoke_results', []), indent=2)}\n\n"
+    formatted += f"Interpretation: {response['interpretation']}\n\n"
+    if 'attempt_count' in response:
+        formatted += f"Attempt Count: {response['attempt_count']}"
     return formatted
 
 custom_css = """
@@ -137,7 +148,7 @@ def create_styled_interface(query_manager: QueryManager) -> gr.Interface:
             
             submit_button = gr.Button("Submit Query")
 
-            response_output = gr.Textbox(label="Response", lines=15)
+            response_output = gr.Textbox(label="Response", lines=20)
             
             gr.Markdown("Enter a biomedical query, and the system will provide an answer based on the available data.")
             
@@ -148,7 +159,8 @@ def create_styled_interface(query_manager: QueryManager) -> gr.Interface:
 
 if __name__ == "__main__":
     # This is just for testing purposes. In production, use run_gradio_interface.py
-    from omics_oracle.spoke_wrapper import SpokeWrapper
-    test_query_manager = QueryManager(SpokeWrapper())
+    openai_wrapper = OpenAIWrapper()
+    spoke_wrapper = SpokeWrapper()
+    test_query_manager = QueryManager(spoke_wrapper, openai_wrapper)
     demo = create_styled_interface(test_query_manager)
     demo.launch()

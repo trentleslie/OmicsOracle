@@ -87,6 +87,46 @@ class TestGradioInterface(unittest.TestCase):
         # Check if the query_manager's process_query method was called
         mock_query_manager.process_query.assert_called_once_with("Test query")
 
+    @patch('omics_oracle.gradio_interface.logger')
+    def test_process_empty_query(self, mock_logger):
+        mock_query_manager = MagicMock(spec=QueryManager)
+        result = process_query("", mock_query_manager)
+        
+        expected_result = "Error: Query cannot be empty. Please enter a valid query."
+        self.assertEqual(result, expected_result)
+
+        # Check if the error log message was called
+        mock_logger.error.assert_called_once_with("Empty query received")
+
+        # Check that query_manager's process_query method was not called
+        mock_query_manager.process_query.assert_not_called()
+
+    @patch('omics_oracle.gradio_interface.logger')
+    def test_process_query_value_error(self, mock_logger):
+        mock_query_manager = MagicMock(spec=QueryManager)
+        mock_query_manager.process_query.side_effect = ValueError("Invalid query format")
+
+        result = process_query("Invalid query", mock_query_manager)
+        
+        expected_result = "An error occurred: Invalid query format"
+        self.assertEqual(result, expected_result)
+
+        # Check if the error log message was called
+        mock_logger.error.assert_called_once_with("Value error while processing query: Invalid query format")
+
+    @patch('omics_oracle.gradio_interface.logger')
+    def test_process_query_unexpected_error(self, mock_logger):
+        mock_query_manager = MagicMock(spec=QueryManager)
+        mock_query_manager.process_query.side_effect = Exception("Unexpected error")
+
+        result = process_query("Query causing unexpected error", mock_query_manager)
+        
+        self.assertTrue(result.startswith("An unexpected error occurred. Please try again later. If the problem persists, contact support. Details: Unexpected error"))
+
+        # Check if the error log message was called
+        mock_logger.error.assert_called_once()
+        self.assertIn("Unexpected error while processing query: Unexpected error", mock_logger.error.call_args[0][0])
+
     def test_format_response(self):
         test_response = {
             "original_query": "Test query",
@@ -99,6 +139,41 @@ class TestGradioInterface(unittest.TestCase):
         self.assertIn("AQL Query: FOR doc IN collection RETURN doc", formatted)
         self.assertIn("SPOKE Results: [\n  {\n    \"result\": \"data\"\n  }\n]", formatted)
         self.assertIn("Interpretation: Test interpretation", formatted)
+
+    @patch('omics_oracle.query_manager.SpokeWrapper')
+    @patch('omics_oracle.query_manager.OpenAIWrapper')
+    def test_spoke_wrapper_integration(self, MockOpenAIWrapper, MockSpokeWrapper):
+        # Create mock SpokeWrapper and OpenAIWrapper instances
+        mock_spoke = MockSpokeWrapper.return_value
+        mock_openai = MockOpenAIWrapper.return_value
+        mock_spoke.execute_query.return_value = [{"protein": "P53", "disease": "Cancer"}]
+        mock_openai.api_key = "test_api_key"
+
+        # Create a QueryManager with the mocked SpokeWrapper and OpenAIWrapper
+        query_manager = QueryManager(spoke_wrapper=mock_spoke, openai_wrapper=mock_openai)
+
+        # Mock the QueryManager's process_query method
+        query_manager.process_query = MagicMock(return_value={
+            "original_query": "Find proteins related to cancer",
+            "aql_query": "MATCH (p:Protein)-[:ASSOCIATED_WITH]->(d:Disease) WHERE d.name = 'Cancer' RETURN p.name as protein, d.name as disease",
+            "spoke_results": [{"protein": "P53", "disease": "Cancer"}],
+            "interpretation": "The protein P53 is associated with Cancer."
+        })
+
+        # Process a query
+        query = "Find proteins related to cancer"
+        result = process_query(query, query_manager)
+
+        # Check if the result contains expected data
+        self.assertIn("Original Query: Find proteins related to cancer", result)
+        self.assertIn("SPOKE Results:", result)
+        self.assertIn("protein", result)
+        self.assertIn("P53", result)
+        self.assertIn("disease", result)
+        self.assertIn("Cancer", result)
+
+        # Verify that the QueryManager's process_query method was called
+        query_manager.process_query.assert_called_once_with(query)
 
 if __name__ == '__main__':
     unittest.main()

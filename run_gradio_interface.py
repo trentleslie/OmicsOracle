@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from omics_oracle.spoke_wrapper import SpokeWrapper
 from omics_oracle.query_manager import QueryManager
 from omics_oracle.gradio_interface import create_styled_interface
+from omics_oracle.openai_wrapper import OpenAIWrapper
 
 # Configure logging to file and console
 logging.basicConfig(level=logging.DEBUG,
@@ -30,11 +31,12 @@ def main():
     # Load environment variables
     load_dotenv()
 
-    # Initialize wrapper
+    # Initialize wrappers
     spoke_wrapper = SpokeWrapper()
+    openai_wrapper = OpenAIWrapper()
 
     # Initialize the query manager
-    query_manager = QueryManager(spoke_wrapper)
+    query_manager = QueryManager(spoke_wrapper, openai_wrapper)
 
     # Create and launch the Gradio interface
     logger.info("Creating Gradio interface...")

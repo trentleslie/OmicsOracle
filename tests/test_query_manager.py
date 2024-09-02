@@ -1,45 +1,71 @@
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, MagicMock
 from omics_oracle.query_manager import QueryManager
+from omics_oracle.openai_wrapper import OpenAIWrapper
+
+class RunnableMock(MagicMock):
+    def __instancecheck__(self, instance):
+        return True
 
 @pytest.fixture
-def query_manager():
+def mock_openai():
+    with patch('omics_oracle.query_manager.ChatOpenAI', new_callable=RunnableMock) as mock_chat_openai:
+        mock_chat_openai.return_value.invoke.return_value.content = "Mocked response"
+        yield mock_chat_openai
+
+@pytest.fixture
+def query_manager(mock_openai):
     mock_spoke_wrapper = Mock()
-    return QueryManager(spoke_wrapper=mock_spoke_wrapper)
+    mock_openai_wrapper = Mock(spec=OpenAIWrapper)
+    mock_openai_wrapper.api_key = "test_api_key"
+    with patch('omics_oracle.query_manager.ArangoClient'), \
+         patch('omics_oracle.query_manager.ArangoGraph'), \
+         patch('omics_oracle.query_manager.ArangoGraphQAChain'):
+        return QueryManager(spoke_wrapper=mock_spoke_wrapper, openai_wrapper=mock_openai_wrapper)
 
 def test_process_query(query_manager):
     # Mock the SpokeWrapper response
     query_manager.spoke.execute_aql.return_value = [{"result": "data"}]
+    
+    # Mock the ArangoGraphQAChain response
+    query_manager.qa_chain.invoke.return_value = {"result": "mocked AQL result"}
 
     result = query_manager.process_query("Test biomedical query")
 
     assert result["original_query"] == "Test biomedical query"
-    assert "aql_query" in result
-    assert result["spoke_results"] == [{"result": "data"}]
+    assert "aql_result" in result
     assert "interpretation" in result
+    assert "attempt_count" in result
 
-def test_process_query_no_aql(query_manager):
-    # Test the scenario where no AQL query is generated
-    with patch.object(QueryManager, 'convert_to_aql', return_value=""):
-        result = query_manager.process_query("Invalid biomedical query")
+def test_process_query_no_result(query_manager):
+    # Test the scenario where no AQL result is generated
+    query_manager.qa_chain.invoke.return_value = {"result": ""}
 
-        assert result["aql_query"] == ""
-        assert result["spoke_results"] == []
+    result = query_manager.process_query("Invalid biomedical query")
+
+    assert result["aql_result"] == []
+    assert result["interpretation"] == "No interpretation available."
+    assert result["attempt_count"] == 3  # Max attempts
 
 def test_error_handling(query_manager):
     # Test error handling in the process_query method
-    with patch.object(QueryManager, 'convert_to_aql', side_effect=Exception("Conversion Error")):
-        with pytest.raises(Exception):
-            query_manager.process_query("Test query")
+    query_manager.qa_chain.invoke.side_effect = Exception("Test error")
 
-def test_convert_to_aql(query_manager):
-    aql_query = query_manager.convert_to_aql("Test biomedical query")
-    assert isinstance(aql_query, str)
-    assert len(aql_query) > 0
+    with pytest.raises(Exception):
+        query_manager.process_query("Test query")
 
-def test_interpret_results(query_manager):
-    interpretation = query_manager.interpret_results([{"result": "data"}], "Test query")
+def test_execute_aql(query_manager):
+    query_manager.qa_chain.invoke.return_value = {"result": "mocked AQL result"}
+    
+    result = query_manager.execute_aql("Test AQL query")
+    
+    assert "captured_output" in result
+
+def test_interpret_aql_result(query_manager):
+    aql_result = [{"gene": "GENE1", "pathway": "PATHWAY1"}]
+    interpretation = query_manager.interpret_aql_result(aql_result)
+    
     assert isinstance(interpretation, str)
-    assert "Found 1 results" in interpretation
+    assert len(interpretation) > 0
 
 # Add more tests as needed to cover edge cases and error scenarios

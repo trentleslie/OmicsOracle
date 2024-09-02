@@ -1,17 +1,112 @@
 # omics_oracle/query_manager.py
 
-from .spoke_wrapper import SpokeWrapper
-from typing import Dict, Any
+import json
+import io
+import re
+from contextlib import redirect_stdout
+from typing import Dict, List, Any
+from arango import ArangoClient
+from langchain_community.graphs import ArangoGraph
+from langchain_openai import ChatOpenAI
+from langchain.chains import ArangoGraphQAChain
 from .logger import setup_logger
+from .spoke_wrapper import SpokeWrapper
+from .prompts import base_prompt
+from .openai_wrapper import OpenAIWrapper
 
 class QueryManager:
-    def __init__(self, spoke_wrapper: SpokeWrapper):
+    def __init__(self, spoke_wrapper: SpokeWrapper, openai_wrapper: OpenAIWrapper):
         self.spoke = spoke_wrapper
+        self.openai_wrapper = openai_wrapper
         self.logger = setup_logger(__name__)
+        
+        # Initialize ChatOpenAI
+        try:
+            self.llm = ChatOpenAI(temperature=0, model='gpt-4o', openai_api_key=self.openai_wrapper.api_key)
+            self.logger.info("ChatOpenAI initialization successful!")
+        except Exception as e:
+            self.logger.error(f"ChatOpenAI initialization failed: {e}")
+            raise
+
+        # Initialize the ArangoDB client and connect to the database
+        self.client = ArangoClient(hosts='http://127.0.0.1:8529')
+        self.db = self.client.db('spoke23_human', username='root', password='ph')
+
+        # Fetch the existing graph from the database
+        self.graph = ArangoGraph(self.db)
+
+        # Instantiate ArangoGraphQAChain
+        self.qa_chain = ArangoGraphQAChain.from_llm(
+            self.llm, 
+            graph=self.graph, 
+            verbose=True, 
+            return_aql_query=True, 
+            return_aql_result=True
+        )
+
+    def capture_stdout(self, func, *args, **kwargs) -> str:
+        f = io.StringIO()
+        with redirect_stdout(f):
+            func(*args, **kwargs)
+        captured_output = f.getvalue()
+        return captured_output
+
+    def execute_aql(self, query: str) -> Dict[str, str]:
+        captured_output = self.capture_stdout(self.qa_chain.invoke, {self.qa_chain.input_key: query})
+        return {'captured_output': captured_output}
+
+    def clean_output(self, output: str) -> str:
+        ansi_escape = re.compile(r'\x1B[@-_][0-?]*[ -/]*[@-~]')
+        cleaned_output = ansi_escape.sub('', output)
+        return cleaned_output
+
+    def fix_json_format(self, aql_result_line: str) -> str:
+        fixed_json = aql_result_line.replace("'", '"').replace('\\', '\\\\').replace('\n', '\\n')
+        return fixed_json
+
+    def extract_aql_result(self, captured_output: str) -> Dict[str, list]:
+        cleaned_output = self.clean_output(captured_output)
+        lines = cleaned_output.splitlines()
+        aql_result_line = None
+        for i, line in enumerate(lines):
+            if "AQL Result:" in line:
+                if i + 1 < len(lines):
+                    aql_result_line = lines[i + 1].strip()
+                break
+
+        if aql_result_line:
+            try:
+                fixed_json = self.fix_json_format(aql_result_line)
+                aql_result = json.loads(fixed_json)
+                return {'aql_result': aql_result}
+            except json.JSONDecodeError:
+                self.logger.error("Failed to parse AQL result JSON")
+        return {'aql_result': []}
+
+    def interpret_aql_result(self, aql_result: List[Dict[str, Any]]) -> str:
+        prompt = (
+            "Based on the following AQL results, provide a detailed and comprehensive scientific story "
+            "that explains the associations between the genes and pathways:\n\n"
+            f"AQL Results: {aql_result}\n\n"
+        )
+        response = self.llm.invoke(prompt)
+        return response.content
+
+    def sequential_chain(self, query: str) -> Dict[str, Any]:
+        response = self.execute_aql(query)
+        captured_output = response['captured_output']
+        final_response = self.extract_aql_result(captured_output)
+        
+        aql_result = final_response.get('aql_result', [])
+        if aql_result:
+            scientific_story = self.interpret_aql_result(aql_result)
+            final_response['scientific_story'] = scientific_story
+
+        return final_response
 
     def process_query(self, user_query: str) -> Dict[str, Any]:
         """
-        Process a user query through the Spoke API.
+        Process a user query through the ArangoGraphQAChain.
 
         Args:
             user_query (str): The natural language query from the user.
@@ -20,49 +115,46 @@ class QueryManager:
             Dict[str, Any]: A dictionary containing the processed results.
         """
         self.logger.info(f"Processing user query: {user_query}")
-        try:
-            # Step 1: Convert user query to AQL query (placeholder)
-            aql_query = self.convert_to_aql(user_query)
-            self.logger.debug(f"AQL query generated: {aql_query}")
+        
+        full_query = user_query + base_prompt
 
-            # Step 2: Execute the AQL query on the Spoke knowledge graph
-            if aql_query:
-                self.logger.debug(f"Executing AQL query on SPOKE: {aql_query}")
-                spoke_results = self.spoke.execute_aql(aql_query)
-                self.logger.debug(f"Results from SPOKE: {spoke_results}")
+        max_attempts = 3
+        attempt = 1
+        success = False
+        failure_message = ("The prior AQL query failed to return results. "
+                           "Please think this through step by step and refine your AQL statement. "
+                           "The original question is as follows:")
+
+        while attempt <= max_attempts and not success:
+            self.logger.debug(f"Attempt {attempt}: Executing query...")
+            response = self.sequential_chain(full_query)
+            aql_result = response.get('aql_result', [])
+
+            if aql_result:
+                success = True
+                self.logger.debug(f"Attempt {attempt} - AQL Result: {aql_result}")
+                self.logger.debug(f"LLM Interpretation: {response.get('scientific_story')}")
             else:
-                spoke_results = []
-                self.logger.warning("No AQL query generated. Skipping Spoke query execution.")
+                self.logger.debug(f"Attempt {attempt} - AQL Result: No result found.")
+                if attempt < max_attempts:
+                    full_query = f"{failure_message} {full_query}"
+                else:
+                    self.logger.warning(f"No result found after {max_attempts} tries.")
 
-            # Step 3: Interpret the results (placeholder)
-            interpretation = self.interpret_results(spoke_results, user_query)
-            self.logger.debug(f"Interpretation: {interpretation}")
+            attempt += 1
 
-            return {
-                "original_query": user_query,
-                "aql_query": aql_query,
-                "spoke_results": spoke_results,
-                "interpretation": interpretation
-            }
-        except Exception as e:
-            self.logger.error(f"Error processing query: {e}")
-            raise
+        return {
+            "original_query": user_query,
+            "aql_result": aql_result,
+            "interpretation": response.get('scientific_story', "No interpretation available."),
+            "attempt_count": attempt - 1
+        }
 
-    def convert_to_aql(self, user_query: str) -> str:
-        """
-        Convert the user query to an AQL query.
-        This is a placeholder and should be implemented with appropriate logic.
-        """
-        # Placeholder implementation
-        self.logger.debug(f"Converting user query to AQL: {user_query}")
-        # For now, we'll just return a simple AQL query
-        return "FOR doc IN collection FILTER doc.type == 'biomedical' RETURN doc"
-
-    def interpret_results(self, spoke_results: list, original_query: str) -> str:
-        """
-        Interpret the SPOKE results in the context of the original query.
-        This is a placeholder and should be implemented with appropriate logic.
-        """
-        # Placeholder implementation
-        self.logger.debug(f"Interpreting results for query: {original_query}")
-        return f"Found {len(spoke_results)} results related to the query."
+# Example usage (for testing purposes)
+if __name__ == "__main__":
+    # This is just for testing. In production, use the appropriate initialization.
+    openai_wrapper = OpenAIWrapper()
+    query_manager = QueryManager(SpokeWrapper(), openai_wrapper)
+    question = "Which genes are most strongly associated with the development of Type 2 Diabetes, and what pathways do they influence?"
+    result = query_manager.process_query(question)
+    print(json.dumps(result, indent=2))
