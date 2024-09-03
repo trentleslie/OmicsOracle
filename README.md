@@ -2,6 +2,10 @@
 
 OmicsOracle is a Python package that integrates the Gemini API, OpenAI's GPT-4o model, SPOKE knowledge graph (using ArangoDB), and a Gradio interface to create a user-friendly system for querying and analyzing biomedical data.
 
+## System Requirements
+
+OmicsOracle has been set up and tested with Python 3.9.18. Make sure you have this version or a compatible one installed on your system.
+
 ## Installation
 
 To install OmicsOracle, follow these steps:
@@ -15,6 +19,28 @@ To install OmicsOracle, follow these steps:
 2. Install the required dependencies:
    ```bash
    pip install -r requirements.txt
+   ```
+
+3. Install ArangoDB:
+   ```bash
+   # Add the repository key to apt
+   curl -OL https://download.arangodb.com/arangodb312/DEBIAN/Release.key
+   sudo apt-key add - < Release.key
+
+   # Use apt-get to install arangodb
+   echo 'deb https://download.arangodb.com/arangodb312/DEBIAN/ /' | sudo tee /etc/apt/sources.list.d/arangodb.list
+   sudo apt-get install apt-transport-https
+   sudo apt-get update
+   sudo apt-get install arangodb3=3.12.2-1
+
+   # To install the debug symbols package (not required by default)
+   # sudo apt-get install arangodb3-dbg=3.12.2-1
+   ```
+
+4. Import SPOKE JSON to ArangoDB:
+   ```bash
+   wget https://git.phenome.health/-/snippets/4/raw/main/import_spoke_json_to_arangodb.py
+   python import_spoke_json_to_arangodb.py
    ```
 
 ## Configuration
