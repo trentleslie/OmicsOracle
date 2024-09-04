@@ -4,20 +4,19 @@ OmicsOracle is a Python package that integrates the Gemini API, OpenAI's GPT-4o 
 
 ## System Requirements
 
-OmicsOracle requires Python 3.9.18. Make sure you have this version installed on your system before proceeding.
+OmicsOracle requires Python 3.9.19. Make sure you have this version installed on your system before proceeding.
 
 ## Installation
 
 To install OmicsOracle, follow these steps:
 
-1. Install Python 3.9.18:
-   First, check if Python 3.9 is already installed:
+1. Check your current Python version:
    ```bash
-   python3.9 --version
+   python3 --version
    ```
-   
-   If you see an error or a different version, follow these steps to install Python 3.9.18:
-   
+
+   If you have an older version of Python, follow these steps to install Python 3.9.19:
+
    For Ubuntu/Debian:
    ```bash
    sudo apt update
@@ -26,20 +25,15 @@ To install OmicsOracle, follow these steps:
    sudo apt update
    sudo apt install python3.9 python3.9-venv
    ```
-   
-   For macOS (using Homebrew):
-   ```bash
-   brew install python@3.9
-   ```
-   
-   For other operating systems, please refer to the official Python documentation for installation instructions.
 
-   After installation, verify that Python 3.9 is installed correctly:
+   After installation, verify that Python 3.9.19 is installed correctly:
    ```bash
    python3.9 --version
    ```
 
-2. Set up a virtual environment with Python 3.9.18:
+   If you're using a different operating system, please refer to the official Python documentation for installation instructions specific to your system.
+
+2. Set up a virtual environment with Python 3.9.19:
    Create a directory for your virtual environments (if you don't already have one):
    ```bash
    mkdir ~/venvs
