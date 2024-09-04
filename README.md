@@ -37,7 +37,27 @@ To install OmicsOracle, follow these steps:
    # sudo apt-get install arangodb3-dbg=3.12.2-1
    ```
 
-4. Import SPOKE JSON to ArangoDB:
+   During the installation process, you will be prompted to set a password for the root user. Use the password 'ph' as subsequent scripts assume this password:
+   ```
+   Please enter password for root user:
+   ph
+   ```
+
+4. Start ArangoDB:
+   After installation, you can start ArangoDB using the following command:
+   ```bash
+   sudo systemctl start arangodb3
+   ```
+   To ensure ArangoDB starts automatically on system boot, you can enable the service:
+   ```bash
+   sudo systemctl enable arangodb3
+   ```
+   You can check the status of the ArangoDB service using:
+   ```bash
+   sudo systemctl status arangodb3
+   ```
+
+5. Import SPOKE JSON to ArangoDB:
    ```bash
    wget https://git.phenome.health/-/snippets/4/raw/main/import_spoke_json_to_arangodb.py
    python import_spoke_json_to_arangodb.py
