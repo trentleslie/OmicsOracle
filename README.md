@@ -4,24 +4,61 @@ OmicsOracle is a Python package that integrates the Gemini API, OpenAI's GPT-4o 
 
 ## System Requirements
 
-OmicsOracle has been set up and tested with Python 3.9.18. Make sure you have this version or a compatible one installed on your system.
+OmicsOracle requires Python 3.9.18. Make sure you have this version installed on your system before proceeding.
 
 ## Installation
 
 To install OmicsOracle, follow these steps:
 
-1. Clone this repository:
+1. Ensure you have Python 3.9.18 installed:
+   Check your current Python version:
+   ```bash
+   python3 --version
+   ```
+   
+   If you don't have Python 3.9.18, you can install it using the following steps:
+   
+   For Ubuntu/Debian:
+   ```bash
+   sudo apt update
+   sudo apt install software-properties-common
+   sudo add-apt-repository ppa:deadsnakes/ppa
+   sudo apt update
+   sudo apt install python3.9
+   ```
+   
+   For macOS (using Homebrew):
+   ```bash
+   brew install python@3.9
+   ```
+   
+   For other operating systems, please refer to the official Python documentation for installation instructions.
+
+2. Clone this repository:
    ```bash
    git clone https://git.phenome.health/trent.leslie/omicsoracle.git
    cd omicsoracle
    ```
 
-2. Install the required dependencies:
+3. Set up a virtual environment with Python 3.9.18:
+   Create a virtual environment:
+   ```bash
+   python3.9 -m venv omics_env
+   ```
+
+   Activate the virtual environment:
+   ```bash
+   source omics_env/bin/activate
+   ```
+
+   Your prompt should now indicate that you're in the virtual environment (e.g., `(omics_env) $`).
+
+4. Install the required dependencies:
    ```bash
    pip install -r requirements.txt
    ```
 
-3. Install ArangoDB:
+5. Install ArangoDB:
    ```bash
    # Add the repository key to apt
    curl -OL https://download.arangodb.com/arangodb312/DEBIAN/Release.key
@@ -43,7 +80,7 @@ To install OmicsOracle, follow these steps:
    ph
    ```
 
-4. Start ArangoDB:
+6. Start ArangoDB:
    After installation, you can start ArangoDB using the following command:
    ```bash
    sudo systemctl start arangodb3
@@ -57,37 +94,26 @@ To install OmicsOracle, follow these steps:
    sudo systemctl status arangodb3
    ```
 
-5. Import SPOKE JSON to ArangoDB:
+7. Import SPOKE JSON to ArangoDB:
    First, download the import script:
    ```bash
    wget https://git.phenome.health/-/snippets/4/raw/main/import_spoke_json_to_arangodb.py
    ```
 
-   Before running the script, ensure you're using the correct Python version. You can check your Python version with:
-   ```bash
-   python --version
-   ```
-   If this doesn't show Python 3.9.18 or a compatible version, you may need to use `python3` instead of `python` in the following commands.
-
    You have two options to run the import script:
 
    a. Run the script normally (this will keep the process in the foreground):
    ```bash
-   python3 import_spoke_json_to_arangodb.py
+   python import_spoke_json_to_arangodb.py
    ```
 
    b. Run the script using `nohup` to keep it running in the background, even if you're disconnected from the session:
    ```bash
-   nohup python3 import_spoke_json_to_arangodb.py > import_log.out 2>&1 &
+   nohup python import_spoke_json_to_arangodb.py > import_log.out 2>&1 &
    ```
    This command will run the script in the background, redirect output to `import_log.out`, and continue running even if you close your terminal session. You can check the progress by viewing the `import_log.out` file:
    ```bash
    tail -f import_log.out
-   ```
-
-   If you encounter any issues with Python not being recognized, ensure that Python is installed correctly and added to your system's PATH. You may need to use the full path to your Python executable, for example:
-   ```bash
-   nohup /usr/bin/python3 import_spoke_json_to_arangodb.py > import_log.out 2>&1 &
    ```
 
 ## Configuration
@@ -110,16 +136,16 @@ Make sure to replace the placeholder values with your actual API keys and connec
 
 To use OmicsOracle, follow these steps:
 
-1. Ensure you have installed all dependencies:
+1. Ensure you're in the virtual environment. If not, activate it:
    ```bash
-   pip install -r requirements.txt
+   source omics_env/bin/activate
    ```
 
 2. Set up the environment variables by creating a `.env` file as described in the Configuration section.
 
 3. Run the Gradio interface using the following command from the project root directory:
    ```bash
-   python3 run_gradio_interface.py
+   python run_gradio_interface.py
    ```
 
 This will launch a web interface where you can enter your biomedical queries. The interface will be accessible in your web browser, typically at `http://localhost:7861` unless specified otherwise.
@@ -134,7 +160,7 @@ To contribute to OmicsOracle, please follow these steps:
 4. Write tests for your new feature
 5. Run the test suite to ensure all tests pass:
    ```bash
-   python3 -m pytest tests/ -v
+   python -m pytest tests/ -v
    ```
 6. Submit a pull request
 
@@ -159,7 +185,7 @@ To contribute to OmicsOracle, please follow these steps:
 To run the test suite, use the following command from the project root directory:
 
 ```bash
-python3 -m pytest tests/ -v
+python -m pytest tests/ -v
 ```
 
 This will run all tests and display detailed output. Make sure all tests pass before submitting a pull request.
