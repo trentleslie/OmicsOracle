@@ -10,13 +10,13 @@ OmicsOracle requires Python 3.9.18. Make sure you have this version installed on
 
 To install OmicsOracle, follow these steps:
 
-1. Ensure you have Python 3.9.18 installed:
-   Check your current Python version:
+1. Install Python 3.9.18:
+   First, check if Python 3.9 is already installed:
    ```bash
-   python3 --version
+   python3.9 --version
    ```
    
-   If you don't have Python 3.9.18, you can install it using the following steps:
+   If you see an error or a different version, follow these steps to install Python 3.9.18:
    
    For Ubuntu/Debian:
    ```bash
@@ -24,7 +24,7 @@ To install OmicsOracle, follow these steps:
    sudo apt install software-properties-common
    sudo add-apt-repository ppa:deadsnakes/ppa
    sudo apt update
-   sudo apt install python3.9
+   sudo apt install python3.9 python3.9-venv
    ```
    
    For macOS (using Homebrew):
@@ -34,14 +34,19 @@ To install OmicsOracle, follow these steps:
    
    For other operating systems, please refer to the official Python documentation for installation instructions.
 
-2. Clone this repository:
+   After installation, verify that Python 3.9 is installed correctly:
    ```bash
-   git clone https://git.phenome.health/trent.leslie/omicsoracle.git
-   cd omicsoracle
+   python3.9 --version
    ```
 
-3. Set up a virtual environment with Python 3.9.18:
-   Create a virtual environment:
+2. Set up a virtual environment with Python 3.9.18:
+   Create a directory for your virtual environments (if you don't already have one):
+   ```bash
+   mkdir ~/venvs
+   cd ~/venvs
+   ```
+
+   Create a virtual environment for OmicsOracle:
    ```bash
    python3.9 -m venv omics_env
    ```
@@ -52,6 +57,12 @@ To install OmicsOracle, follow these steps:
    ```
 
    Your prompt should now indicate that you're in the virtual environment (e.g., `(omics_env) $`).
+
+3. Clone the OmicsOracle repository:
+   ```bash
+   git clone https://git.phenome.health/trent.leslie/omicsoracle.git
+   cd omicsoracle
+   ```
 
 4. Install the required dependencies:
    ```bash
@@ -138,12 +149,17 @@ To use OmicsOracle, follow these steps:
 
 1. Ensure you're in the virtual environment. If not, activate it:
    ```bash
-   source omics_env/bin/activate
+   source ~/venvs/omics_env/bin/activate
    ```
 
-2. Set up the environment variables by creating a `.env` file as described in the Configuration section.
+2. Navigate to the OmicsOracle directory:
+   ```bash
+   cd path/to/omicsoracle
+   ```
 
-3. Run the Gradio interface using the following command from the project root directory:
+3. Set up the environment variables by creating a `.env` file as described in the Configuration section.
+
+4. Run the Gradio interface using the following command from the project root directory:
    ```bash
    python run_gradio_interface.py
    ```
