@@ -60,7 +60,22 @@ To install OmicsOracle, follow these steps:
 5. Import SPOKE JSON to ArangoDB:
    ```bash
    wget https://git.phenome.health/-/snippets/4/raw/main/import_spoke_json_to_arangodb.py
+   ```
+
+   You have two options to run the import script:
+
+   a. Run the script normally (this will keep the process in the foreground):
+   ```bash
    python import_spoke_json_to_arangodb.py
+   ```
+
+   b. Run the script using `nohup` to keep it running in the background, even if you're disconnected from the session:
+   ```bash
+   nohup python import_spoke_json_to_arangodb.py > import_log.out 2>&1 &
+   ```
+   This command will run the script in the background, redirect output to `import_log.out`, and continue running even if you close your terminal session. You can check the progress by viewing the `import_log.out` file:
+   ```bash
+   tail -f import_log.out
    ```
 
 ## Configuration
