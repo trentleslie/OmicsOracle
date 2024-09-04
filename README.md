@@ -58,24 +58,36 @@ To install OmicsOracle, follow these steps:
    ```
 
 5. Import SPOKE JSON to ArangoDB:
+   First, download the import script:
    ```bash
    wget https://git.phenome.health/-/snippets/4/raw/main/import_spoke_json_to_arangodb.py
    ```
+
+   Before running the script, ensure you're using the correct Python version. You can check your Python version with:
+   ```bash
+   python --version
+   ```
+   If this doesn't show Python 3.9.18 or a compatible version, you may need to use `python3` instead of `python` in the following commands.
 
    You have two options to run the import script:
 
    a. Run the script normally (this will keep the process in the foreground):
    ```bash
-   python import_spoke_json_to_arangodb.py
+   python3 import_spoke_json_to_arangodb.py
    ```
 
    b. Run the script using `nohup` to keep it running in the background, even if you're disconnected from the session:
    ```bash
-   nohup python import_spoke_json_to_arangodb.py > import_log.out 2>&1 &
+   nohup python3 import_spoke_json_to_arangodb.py > import_log.out 2>&1 &
    ```
    This command will run the script in the background, redirect output to `import_log.out`, and continue running even if you close your terminal session. You can check the progress by viewing the `import_log.out` file:
    ```bash
    tail -f import_log.out
+   ```
+
+   If you encounter any issues with Python not being recognized, ensure that Python is installed correctly and added to your system's PATH. You may need to use the full path to your Python executable, for example:
+   ```bash
+   nohup /usr/bin/python3 import_spoke_json_to_arangodb.py > import_log.out 2>&1 &
    ```
 
 ## Configuration
@@ -107,7 +119,7 @@ To use OmicsOracle, follow these steps:
 
 3. Run the Gradio interface using the following command from the project root directory:
    ```bash
-   python run_gradio_interface.py
+   python3 run_gradio_interface.py
    ```
 
 This will launch a web interface where you can enter your biomedical queries. The interface will be accessible in your web browser, typically at `http://localhost:7861` unless specified otherwise.
@@ -122,7 +134,7 @@ To contribute to OmicsOracle, please follow these steps:
 4. Write tests for your new feature
 5. Run the test suite to ensure all tests pass:
    ```bash
-   python -m pytest tests/ -v
+   python3 -m pytest tests/ -v
    ```
 6. Submit a pull request
 
@@ -147,7 +159,7 @@ To contribute to OmicsOracle, please follow these steps:
 To run the test suite, use the following command from the project root directory:
 
 ```bash
-python -m pytest tests/ -v
+python3 -m pytest tests/ -v
 ```
 
 This will run all tests and display detailed output. Make sure all tests pass before submitting a pull request.
