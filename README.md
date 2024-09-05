@@ -53,12 +53,15 @@ To install OmicsOracle, follow these steps:
    Your prompt should now indicate that you're in the virtual environment (e.g., `(omics_env) $`).
 
 3. Clone the OmicsOracle repository:
+   Navigate to the directory where you want to clone the repository. This should be outside of the virtual environment directory. For example:
    ```bash
+   cd ~
    git clone https://git.phenome.health/trent.leslie/omicsoracle.git
    cd omicsoracle
    ```
 
 4. Install the required dependencies:
+   Ensure you're in the omicsoracle directory and your virtual environment is activated, then run:
    ```bash
    pip install -r requirements.txt
    ```
@@ -100,7 +103,7 @@ To install OmicsOracle, follow these steps:
    ```
 
 7. Import SPOKE JSON to ArangoDB:
-   First, download the import script:
+   Ensure you're in the omicsoracle directory, then download the import script:
    ```bash
    wget https://git.phenome.health/-/snippets/4/raw/main/import_spoke_json_to_arangodb.py
    ```
@@ -123,7 +126,7 @@ To install OmicsOracle, follow these steps:
 
 ## Configuration
 
-OmicsOracle uses environment variables for configuration. Create a `.env` file in the root directory of the project with the following content:
+OmicsOracle uses environment variables for configuration. Create a `.env` file in the root directory of the project (the omicsoracle directory) with the following content:
 
 ```
 GEMINI_AUTH=your_gemini_auth_key
@@ -148,10 +151,10 @@ To use OmicsOracle, follow these steps:
 
 2. Navigate to the OmicsOracle directory:
    ```bash
-   cd path/to/omicsoracle
+   cd ~/omicsoracle
    ```
 
-3. Set up the environment variables by creating a `.env` file as described in the Configuration section.
+3. Ensure the environment variables are set up by creating a `.env` file as described in the Configuration section.
 
 4. Run the Gradio interface using the following command from the project root directory:
    ```bash
